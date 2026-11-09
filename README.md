@@ -127,10 +127,10 @@ The full tables and method are in [docs/05-performance.md](docs/05-performance.m
 
 ## External references
 
-- DolRecomp: <https://github.com/encounter/dolrecomp>
+- DolRecomp: <https://github.com/ExpansionPak/DolRecomp>
 - Dolphin (runtime base): <https://github.com/dolphin-emu/dolphin>
-- ModernGekko template: <https://github.com/encounter/moderngekko> (see the
-  project's `lib/ModernGekko-Template`)
+- ModernGekko runtime: <https://github.com/ExpansionPak/ModernGekko>
+- ModernGekko template: <https://github.com/ExpansionPak/ModernGekko-Template>
 - RecompLauncher: <https://recomplauncher.com>
 - RecompLauncher SDK guide:
   <https://recomplauncher.com/sdk-files/guide.md>
@@ -139,7 +139,7 @@ The full tables and method are in [docs/05-performance.md](docs/05-performance.m
 - Redump: <http://redump.org>
 - GameTDB: <https://www.gametdb.com>
 - LLVM PGO: <https://llvm.org/docs/CommandGuide/llvm-profdata.html>
-- CMake RC language: <https://cmake.org/cmake/help/latest/language/RC.html>
+- CMake `enable_language` (RC): <https://cmake.org/cmake/help/latest/command/enable_language.html>
 
 ## License
 
