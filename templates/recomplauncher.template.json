@@ -26,9 +26,7 @@
       "--module",
       "{install}/gDISCID_recomp.dll",
       "--user-dir",
-      "{local}/MyRecomp",
-      "--core",
-      "jit"
+      "{local}/MyRecomp"
     ]
   },
   "config": [
