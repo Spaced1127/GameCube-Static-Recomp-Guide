@@ -41,7 +41,7 @@ homebrew port follows.
 A native static recompilation cannot produce a byte-identical GameCube DOL:
 the output is host code (x86-64 PE/ELF). The retail DOL is preserved
 bit-identically and verified; see
-[`notes/03-objective-and-identity.md`](notes/03-objective-and-identity.md).
+[`spongebob-objective-and-identity.md`](spongebob-objective-and-identity.md).
 
 ## Confirmed facts
 

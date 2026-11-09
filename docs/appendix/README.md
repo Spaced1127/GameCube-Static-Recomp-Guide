@@ -11,6 +11,8 @@ Paths refer to the original build machine; there is no game data here.
   runner behavior, settings, extractor, controller, performance.
 - [SpongeBob STATE](spongebob-state.md) - project status, release and known
   issues at the time the guide was assembled.
+- [Objective and identity](spongebob-objective-and-identity.md) - why a static
+  recomp cannot also emit a byte-identical DOL.
 
 These are snapshots, not a live status. The current repositories are the
 source of truth:
