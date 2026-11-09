@@ -97,6 +97,7 @@ docs/08-icons-and-release.md  ICO/RC embedding, packaging, release verification
 docs/09-troubleshooting.md    symptom -> cause -> fix
 docs/10-case-studies.md       SpongeBob and Rocket Power, with numbers
 docs/11-agent-playbook.md     ordered playbook for an AI agent
+docs/appendix/                raw SpongeBob performance/test/state notes
 docs/recomplauncher.schema.json  offline copy of the SDK schema
 templates/                    manifest, RC/icon, PGO, release, automation, AGENTS
 tools/                        generic disc/DOL/RVZ helpers used by both projects

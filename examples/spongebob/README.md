@@ -21,3 +21,9 @@ Performance notes:
 - Static module outdoors: 42.1 fps / 0.704x at 1080p MSAA 8x.
 - JIT outdoors: 59.94 fps / 1.000x.
 - The static module remains selectable as the faithful artifact.
+
+Full historical notes:
+[performance](../../docs/appendix/spongebob-performance.md),
+[test log](../../docs/appendix/spongebob-test-log.md),
+[standalone app](../../docs/appendix/spongebob-standalone-app.md),
+[state](../../docs/appendix/spongebob-state.md).
