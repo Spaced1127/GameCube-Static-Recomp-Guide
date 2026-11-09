@@ -30,6 +30,7 @@ legally dumped disc.
 | Adding icons and cutting a release | [docs/08-icons-and-release.md](docs/08-icons-and-release.md), [checklists/RELEASE.md](checklists/RELEASE.md) |
 | Stuck on a failure | [docs/09-troubleshooting.md](docs/09-troubleshooting.md) |
 | An AI agent picking up the work | [AGENTS.md](AGENTS.md), [docs/11-agent-playbook.md](docs/11-agent-playbook.md) |
+| Just need the commands | [docs/CHEATSHEET.md](docs/CHEATSHEET.md) |
 
 ## The short version
 
@@ -84,6 +85,7 @@ legally dumped disc.
 README.md                     this page
 AGENTS.md                     rules for AI agents working in a recomp
 docs/00-quickstart.md         new-project path and minimum commands
+docs/CHEATSHEET.md            copy-paste commands for every phase
 docs/01-architecture.md       disc -> module -> runtime -> launcher
 docs/02-disc-and-dol.md       GameCube disc/DOL/FST, Redump, extraction
 docs/03-build-static-module.md DolRecomp C, Clang, PGO, patches
