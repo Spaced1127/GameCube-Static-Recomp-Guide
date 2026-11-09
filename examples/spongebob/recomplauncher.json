@@ -1,0 +1,479 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "name": "SpongeBobRecomp",
+  "repo": "Spaced1127/SpongeBobRecomp",
+  "game": {
+    "kind": "iso",
+    "label": "Your USA GameCube disc image (.iso) of SpongeBob SquarePants: Revenge of the Flying Dutchman (GSQE78).",
+    "dumps": [
+      {
+        "name": "USA",
+        "size": 1459978240,
+        "crc32": "f2facf74"
+      }
+    ]
+  },
+  "prepare": {
+    "program": ["SpongeBobRecomp.exe"],
+    "args": ["--extract", "{game}"],
+    "label": "Extracting the game files from your disc",
+    "timeout": 1200
+  },
+  "start": {
+    "program": ["SpongeBobRecompRunner.exe"],
+    "args": [
+      "--module",
+      "{install}/gGSQE78_recomp.dll",
+      "--user-dir",
+      "{local}/SpongeBobRecomp"
+    ]
+  },
+  "config": [
+    {
+      "id": "main",
+      "format": "ini",
+      "file": [
+        {
+          "path": "{local}/SpongeBobRecomp/config.ini"
+        }
+      ],
+      "ensure": {
+        "resolution": "1920x1080",
+        "backend": "Vulkan",
+        "efb_access": "true"
+      },
+      "always": {
+        "efb_access": "true",
+        "emulation_speed": "1"
+      },
+      "new": {
+        "resolution": "1920x1080",
+        "backend": "Vulkan",
+        "fullscreen": "true",
+        "show_fps_in_title": "false",
+        "msaa": "2",
+        "ssaa": "false",
+        "anisotropy": "2",
+        "vsync": "true",
+        "aspect": "auto",
+        "widescreen_hack": "false",
+        "efb_access": "true",
+        "mute": "false",
+        "volume": "100",
+        "emulation_speed": "1",
+        "cpu_core": "jit"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "core",
+      "label": "CPU core",
+      "in": "args",
+      "help": "JIT runs at the full 60 FPS. Static recomp is the faithful static build but can dip in heavy scenes.",
+      "choices": [
+        {
+          "label": "JIT (60 FPS)",
+          "args": []
+        },
+        {
+          "label": "Static recomp",
+          "args": ["--core", "static"]
+        }
+      ]
+    },
+    {
+      "id": "window",
+      "label": "Window",
+      "help": "Fullscreen fills the screen. F11 or Alt+Enter toggles it in game.",
+      "choices": [
+        {
+          "label": "Fullscreen",
+          "set": {
+            "fullscreen": "true"
+          }
+        },
+        {
+          "label": "Windowed",
+          "set": {
+            "fullscreen": "false"
+          }
+        }
+      ],
+      "defaults": {
+        "fullscreen": "true"
+      }
+    },
+    {
+      "id": "resolution",
+      "label": "Resolution",
+      "help": "The internal render resolution, not the window size. 3x is 1920x1080.",
+      "choices": [
+        {
+          "label": "1x (640x528)",
+          "set": {
+            "resolution": "640x528"
+          }
+        },
+        {
+          "label": "2x (1280x720)",
+          "set": {
+            "resolution": "1280x720"
+          }
+        },
+        {
+          "label": "3x (1920x1080)",
+          "set": {
+            "resolution": "1920x1080"
+          }
+        },
+        {
+          "label": "4x (2560x1440)",
+          "set": {
+            "resolution": "2560x1440"
+          }
+        },
+        {
+          "label": "6x (3840x2160)",
+          "set": {
+            "resolution": "3840x2160"
+          }
+        },
+        {
+          "label": "8x (5120x2880)",
+          "set": {
+            "resolution": "5120x2880"
+          }
+        },
+        {
+          "label": "12x (7680x4320)",
+          "set": {
+            "resolution": "7680x4320"
+          }
+        }
+      ],
+      "defaults": {
+        "resolution": "1920x1080"
+      }
+    },
+    {
+      "id": "aa",
+      "label": "Anti-aliasing",
+      "help": "MSAA smooths the edges of 3D objects. Higher levels cost more GPU time.",
+      "choices": [
+        {
+          "label": "Off",
+          "set": {
+            "msaa": "1"
+          }
+        },
+        {
+          "label": "2x",
+          "set": {
+            "msaa": "2"
+          }
+        },
+        {
+          "label": "4x",
+          "set": {
+            "msaa": "4"
+          }
+        },
+        {
+          "label": "8x",
+          "set": {
+            "msaa": "8"
+          }
+        }
+      ],
+      "defaults": {
+        "msaa": "2"
+      }
+    },
+    {
+      "id": "ssaa",
+      "label": "Supersampling",
+      "help": "Renders above the target and downsamples. It looks clean but is expensive.",
+      "choices": [
+        {
+          "label": "Off",
+          "set": {
+            "ssaa": "false"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "ssaa": "true"
+          }
+        }
+      ],
+      "defaults": {
+        "ssaa": "false"
+      }
+    },
+    {
+      "id": "af",
+      "label": "Anisotropic filtering",
+      "help": "Keeps floor and wall textures sharp at shallow angles. It costs very little.",
+      "choices": [
+        {
+          "label": "1x",
+          "set": {
+            "anisotropy": "0"
+          }
+        },
+        {
+          "label": "2x",
+          "set": {
+            "anisotropy": "1"
+          }
+        },
+        {
+          "label": "4x",
+          "set": {
+            "anisotropy": "2"
+          }
+        },
+        {
+          "label": "8x",
+          "set": {
+            "anisotropy": "3"
+          }
+        },
+        {
+          "label": "16x",
+          "set": {
+            "anisotropy": "4"
+          }
+        }
+      ],
+      "defaults": {
+        "anisotropy": "2"
+      }
+    },
+    {
+      "id": "vsync",
+      "label": "VSync",
+      "help": "Locks the picture to your screen's refresh rate. Turn it off for the lowest input delay.",
+      "choices": [
+        {
+          "label": "On",
+          "set": {
+            "vsync": "true"
+          }
+        },
+        {
+          "label": "Off",
+          "set": {
+            "vsync": "false"
+          }
+        }
+      ],
+      "defaults": {
+        "vsync": "true"
+      }
+    },
+    {
+      "id": "aspect",
+      "label": "Aspect ratio",
+      "help": "Auto uses the game's own 4:3 framing. 16:9 widens the view.",
+      "choices": [
+        {
+          "label": "Auto (4:3)",
+          "set": {
+            "aspect": "auto"
+          }
+        },
+        {
+          "label": "16:9",
+          "set": {
+            "aspect": "wide"
+          }
+        },
+        {
+          "label": "4:3",
+          "set": {
+            "aspect": "standard"
+          }
+        },
+        {
+          "label": "Stretch",
+          "set": {
+            "aspect": "stretch"
+          }
+        }
+      ],
+      "defaults": {
+        "aspect": "auto"
+      }
+    },
+    {
+      "id": "wide_hack",
+      "label": "Widescreen hack",
+      "help": "Stretches 3D to the chosen aspect. The HUD may stretch with it.",
+      "choices": [
+        {
+          "label": "Off",
+          "set": {
+            "widescreen_hack": "false"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "widescreen_hack": "true"
+          }
+        }
+      ],
+      "defaults": {
+        "widescreen_hack": "false"
+      }
+    },
+    {
+      "id": "backend",
+      "label": "Graphics backend",
+      "help": "Vulkan is recommended. OpenGL is a fallback for older drivers.",
+      "choices": [
+        {
+          "label": "Vulkan",
+          "set": {
+            "backend": "Vulkan"
+          }
+        },
+        {
+          "label": "OpenGL",
+          "set": {
+            "backend": "OGL"
+          }
+        }
+      ],
+      "defaults": {
+        "backend": "Vulkan"
+      }
+    },
+    {
+      "id": "fps",
+      "label": "FPS in title bar",
+      "help": "Shows the live frame rate in the game window's title bar.",
+      "choices": [
+        {
+          "label": "Off",
+          "set": {
+            "show_fps_in_title": "false"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "show_fps_in_title": "true"
+          }
+        }
+      ],
+      "defaults": {
+        "show_fps_in_title": "false"
+      }
+    },
+    {
+      "id": "mute",
+      "label": "Mute audio",
+      "help": "Silences the game, movies and menu sounds.",
+      "choices": [
+        {
+          "label": "Off",
+          "set": {
+            "mute": "false"
+          }
+        },
+        {
+          "label": "On",
+          "set": {
+            "mute": "true"
+          }
+        }
+      ],
+      "defaults": {
+        "mute": "false"
+      }
+    },
+    {
+      "id": "volume",
+      "label": "Volume",
+      "help": "Master volume. Mute overrides this.",
+      "choices": [
+        {
+          "label": "100%",
+          "set": {
+            "volume": "100"
+          }
+        },
+        {
+          "label": "75%",
+          "set": {
+            "volume": "75"
+          }
+        },
+        {
+          "label": "50%",
+          "set": {
+            "volume": "50"
+          }
+        },
+        {
+          "label": "25%",
+          "set": {
+            "volume": "25"
+          }
+        },
+        {
+          "label": "0%",
+          "set": {
+            "volume": "0"
+          }
+        }
+      ],
+      "defaults": {
+        "volume": "100"
+      }
+    }
+  ],
+  "saves": [
+    "{local}/SpongeBobRecomp/GC",
+    "{local}/SpongeBobRecomp/StateSaves",
+    "{local}/SpongeBobRecomp/config.ini"
+  ],
+  "folders": {
+    "saves": [
+      {
+        "path": "{local}/SpongeBobRecomp/GC"
+      },
+      {
+        "path": "{local}/SpongeBobRecomp/StateSaves"
+      }
+    ],
+    "logs": [
+      {
+        "path": "{local}/SpongeBobRecomp/Logs"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "saves",
+      "label": "Saves",
+      "help": "Your memory card saves and savestates.",
+      "open": "saves"
+    },
+    {
+      "id": "logs",
+      "label": "Logs",
+      "help": "Runtime logs for troubleshooting.",
+      "open": "logs"
+    }
+  ],
+  "exit_codes": {
+    "1": "The game could not start. Check the log in the Logs folder.",
+    "2": "The game could not find its extracted files. Run setup again from RecompLauncher."
+  }
+}

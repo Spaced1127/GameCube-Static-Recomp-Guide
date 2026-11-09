@@ -1,0 +1,44 @@
+# Game data - never commit
+*.iso
+*.rvz
+*.wbfs
+*.gcm
+*.gcz
+*.wia
+*.dol
+*.elf
+*.gci
+*.raw
+Game/
+game/
+sys/
+files/
+
+# Build output
+build/
+out/
+dist/
+*.zip
+*.7z
+*.dll
+*.exe
+*.lib
+*.obj
+*.pdb
+*.res
+*.profraw
+*.profdata
+
+# Local state and logs
+work/
+*.state
+*.sav
+Logs/
+*.log
+
+# Editors / OS
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

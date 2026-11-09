@@ -1,0 +1,221 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "name": "Rocket Power: Beach Bandits",
+  "repo": "Spaced1127/RPBB-Static-Recomp",
+  "game": {
+    "kind": "iso_or_folder",
+    "label": "Your copy of Rocket Power: Beach Bandits (USA, GBQE78): the disc image (.iso) or the extracted folder containing sys/main.dol and files/.",
+    "check": {
+      "file": "sys/main.dol"
+    },
+    "dumps": [
+      {
+        "name": "USA",
+        "size": 1459978240,
+        "crc32": "8be53ce8"
+      }
+    ]
+  },
+  "prepare": {
+    "program": ["rpbb-launcher.exe"],
+    "args": ["--prepare", "--game", "{game}", "--install", "{install}", "--user-dir", "{local}/RocketPowerRecomp"],
+    "label": "Extracting your disc image",
+    "timeout": 600
+  },
+  "start": {
+    "program": ["rpbb-launcher.exe"],
+    "args": ["--game", "{game}", "--install", "{install}", "--user-dir", "{local}/RocketPowerRecomp", "--window-mode", "borderless"],
+    "env": {
+      "MODERNGEKKO_STATICRECOMP": "0"
+    }
+  },
+  "config": [
+    {
+      "id": "dolphin",
+      "format": "ini",
+      "file": [
+        { "path": "{local}/RocketPowerRecomp/Config/Dolphin.ini" }
+      ],
+      "ensure": {
+        "Core/DSPHLE": "False",
+        "Core/EmulationSpeed": "1.0",
+        "DSP/Backend": "Cubeb"
+      },
+      "always": {
+        "Core/DSPHLE": "False",
+        "Core/EmulationSpeed": "1.0",
+        "DSP/Backend": "Cubeb"
+      },
+      "new": {
+        "Core/CPUCore": "1",
+        "Core/GFXBackend": "Vulkan",
+        "Core/DSPHLE": "False",
+        "Core/EmulationSpeed": "1.0",
+        "DSP/Backend": "Cubeb",
+        "DSP/DSPThread": "True",
+        "DSP/Muted": "False",
+        "DSP/Volume": "100",
+        "Display/Fullscreen": "False"
+      }
+    },
+    {
+      "id": "gfx",
+      "format": "ini",
+      "file": [
+        { "path": "{local}/RocketPowerRecomp/Config/GFX.ini" }
+      ],
+      "new": {
+        "Settings/InternalResolution": "3",
+        "Settings/ShaderCache": "True",
+        "Settings/ShaderCompilationMode": "2",
+        "Settings/WaitForShadersBeforeStarting": "True"
+      }
+    },
+    {
+      "id": "frontend",
+      "format": "ini",
+      "file": [
+        { "path": "{local}/RocketPowerRecomp/config.ini" }
+      ],
+      "new": {
+        "Video/resolution": "1920x1080",
+        "Video/backend": "Vulkan",
+        "Video/fullscreen": "false",
+        "Video/show_fps_in_title": "true",
+        "Video/aspect": "auto",
+        "Video/widescreen_hack": "false",
+        "Video/mute": "false",
+        "Video/volume": "100",
+        "Video/efb_access": "true"
+      },
+      "ensure": {
+        "Video/aspect": "auto",
+        "Video/widescreen_hack": "false"
+      },
+      "always": {
+        "Video/efb_access": "true"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "resolution",
+      "label": "Resolution",
+      "in": "frontend",
+      "help": "The internal render resolution, not the window size. 3x is 1920x1080. Lower it if the game drops below 60 FPS.",
+      "choices": [
+        { "label": "1x (640x528)", "set": { "Video/resolution": "640x528" } },
+        { "label": "2x (1280x720)", "set": { "Video/resolution": "1280x720" } },
+        { "label": "3x (1920x1080)", "set": { "Video/resolution": "1920x1080" } },
+        { "label": "4x (2560x1440)", "set": { "Video/resolution": "2560x1440" } },
+        { "label": "6x (3840x2160)", "set": { "Video/resolution": "3840x2160" } },
+        { "label": "8x (5120x2880)", "set": { "Video/resolution": "5120x2880" } },
+        { "label": "12x (7680x4320)", "set": { "Video/resolution": "7680x4320" } }
+      ],
+      "defaults": {
+        "Video/resolution": "1920x1080"
+      }
+    },
+    {
+      "id": "graphics",
+      "label": "Graphics API",
+      "in": "args",
+      "help": "Vulkan is the default. D3D12 or OpenGL can be tried if Vulkan has driver problems.",
+      "choices": [
+        { "label": "Vulkan", "args": ["--graphics", "vulkan"] },
+        { "label": "D3D12", "args": ["--graphics", "d3d12"] },
+        { "label": "OpenGL", "args": ["--graphics", "opengl"] }
+      ]
+    },
+    {
+      "id": "aspect",
+      "label": "Aspect ratio",
+      "in": "frontend",
+      "help": "Auto keeps the game's own 4:3 framing. 16:9 fills a widescreen display; enable Widescreen hack for a full-width 3D view.",
+      "choices": [
+        { "label": "Auto (game native)", "set": { "Video/aspect": "auto" } },
+        { "label": "16:9 widescreen", "set": { "Video/aspect": "wide" } },
+        { "label": "4:3 standard", "set": { "Video/aspect": "standard" } },
+        { "label": "Stretch", "set": { "Video/aspect": "stretch" } }
+      ],
+      "defaults": {
+        "Video/aspect": "auto"
+      }
+    },
+    {
+      "id": "wide_hack",
+      "label": "Widescreen hack",
+      "in": "frontend",
+      "help": "Widens the 3D projection to match the chosen aspect. The 2D HUD may stretch.",
+      "choices": [
+        { "label": "Off", "set": { "Video/widescreen_hack": "false" } },
+        { "label": "On", "set": { "Video/widescreen_hack": "true" } }
+      ],
+      "defaults": {
+        "Video/widescreen_hack": "false"
+      }
+    },
+    {
+      "id": "window",
+      "label": "Window mode",
+      "in": "args",
+      "help": "Fullscreen windowed is borderless at your desktop resolution. Fullscreen uses your monitor's native resolution at 60 Hz.",
+      "choices": [
+        { "label": "Fullscreen windowed", "args": ["--window-mode", "borderless"] },
+        { "label": "Fullscreen", "args": ["--window-mode", "fullscreen"] },
+        { "label": "Windowed", "args": ["--window-mode", "windowed"] }
+      ]
+    },
+    {
+      "id": "fps",
+      "label": "Show FPS",
+      "in": "frontend",
+      "help": "Shows the frame rate in the window title.",
+      "choices": [
+        { "label": "On", "set": { "Video/show_fps_in_title": "true" } },
+        { "label": "Off", "set": { "Video/show_fps_in_title": "false" } }
+      ],
+      "defaults": {
+        "Video/show_fps_in_title": "true"
+      }
+    }
+  ],
+  "saves": [
+    "{local}/RocketPowerRecomp/GC"
+  ],
+  "folders": {
+    "saves": [
+      { "path": "{local}/RocketPowerRecomp/GC" }
+    ],
+    "config": [
+      { "path": "{local}/RocketPowerRecomp/Config" }
+    ],
+    "logs": [
+      { "path": "{local}/RocketPowerRecomp/logs" }
+    ]
+  },
+  "actions": [
+    {
+      "id": "saves",
+      "label": "Saves",
+      "help": "The GameCube memory card files.",
+      "open": "saves"
+    },
+    {
+      "id": "config",
+      "label": "Settings folder",
+      "help": "Dolphin.ini, GFX.ini and the controller profile.",
+      "open": "config"
+    },
+    {
+      "id": "logs",
+      "label": "Logs",
+      "help": "The last run's output.",
+      "open": "logs"
+    }
+  ],
+  "exit_codes": {
+    "2": "The game couldn't start. Make sure your copy has sys/main.dol and files/, or pick your .iso again on the game's page."
+  }
+}

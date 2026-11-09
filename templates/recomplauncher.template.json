@@ -1,0 +1,170 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "name": "MyRecomp",
+  "repo": "you/your-recomp",
+  "game": {
+    "kind": "iso",
+    "label": "Your USA GameCube disc image (.iso) of My Game (DISCID).",
+    "dumps": [
+      {
+        "name": "USA",
+        "size": 0,
+        "crc32": "00000000"
+      }
+    ]
+  },
+  "prepare": {
+    "program": ["MyRecomp.exe"],
+    "args": ["--extract", "{game}"],
+    "label": "Extracting the game files from your disc",
+    "timeout": 1200
+  },
+  "start": {
+    "program": ["MyRecompRunner.exe"],
+    "args": [
+      "--module",
+      "{install}/gDISCID_recomp.dll",
+      "--user-dir",
+      "{local}/MyRecomp",
+      "--core",
+      "jit"
+    ]
+  },
+  "config": [
+    {
+      "id": "main",
+      "format": "ini",
+      "file": [
+        {
+          "path": "{local}/MyRecomp/config.ini"
+        }
+      ],
+      "ensure": {
+        "resolution": "1920x1080",
+        "backend": "Vulkan",
+        "efb_access": "true"
+      },
+      "always": {
+        "efb_access": "true",
+        "emulation_speed": "1"
+      },
+      "new": {
+        "resolution": "1920x1080",
+        "backend": "Vulkan",
+        "fullscreen": "true",
+        "show_fps_in_title": "false",
+        "msaa": "2",
+        "ssaa": "false",
+        "anisotropy": "2",
+        "vsync": "true",
+        "aspect": "auto",
+        "widescreen_hack": "false",
+        "efb_access": "true",
+        "mute": "false",
+        "volume": "100",
+        "emulation_speed": "1",
+        "cpu_core": "jit"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "core",
+      "label": "CPU core",
+      "in": "args",
+      "help": "JIT runs at the full 60 FPS. Static recomp is the faithful static build but can dip in heavy scenes.",
+      "choices": [
+        {
+          "label": "JIT (60 FPS)",
+          "args": []
+        },
+        {
+          "label": "Static recomp",
+          "args": ["--core", "static"]
+        }
+      ]
+    },
+    {
+      "id": "resolution",
+      "label": "Resolution",
+      "help": "The internal render resolution, not the window size.",
+      "choices": [
+        {
+          "label": "1x (640x528)",
+          "set": {
+            "resolution": "640x528"
+          }
+        },
+        {
+          "label": "3x (1920x1080)",
+          "set": {
+            "resolution": "1920x1080"
+          }
+        }
+      ],
+      "defaults": {
+        "resolution": "1920x1080"
+      }
+    },
+    {
+      "id": "window",
+      "label": "Window",
+      "help": "Fullscreen fills the screen. F11 or Alt+Enter toggles it in game.",
+      "choices": [
+        {
+          "label": "Fullscreen",
+          "set": {
+            "fullscreen": "true"
+          }
+        },
+        {
+          "label": "Windowed",
+          "set": {
+            "fullscreen": "false"
+          }
+        }
+      ],
+      "defaults": {
+        "fullscreen": "true"
+      }
+    }
+  ],
+  "saves": [
+    "{local}/MyRecomp/GC",
+    "{local}/MyRecomp/StateSaves"
+  ],
+  "folders": {
+    "saves": [
+      {
+        "path": "{local}/MyRecomp/GC"
+      },
+      {
+        "path": "{local}/MyRecomp/StateSaves"
+      }
+    ],
+    "logs": [
+      {
+        "path": "{local}/MyRecomp/Logs"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "saves",
+      "label": "Saves",
+      "help": "Your memory card saves and savestates.",
+      "open": "saves"
+    },
+    {
+      "id": "logs",
+      "label": "Logs",
+      "help": "Runtime logs for troubleshooting.",
+      "open": "logs"
+    }
+  ],
+  "exit_codes": {
+    "1": "The game could not start. Check the Logs folder.",
+    "2": "The game could not find its extracted files. Run setup again."
+  }
+}
