@@ -73,6 +73,11 @@ legally dumped disc.
     not 60.000.
 - **External load is real.** A local LLM, browser, or compositor using the GPU
     can make a maxed MSAA/SSAA profile dip even when the port is fine.
+- **Fullscreen belongs to the window.** Create the window windowed, initialize
+    the video backend, then apply borderless fullscreen after boot. Do not
+    toggle it in the platform destructor, and validate the swap-chain image
+    before every present. See
+    [docs/04](docs/04-runtime-and-launcher.md#fullscreen-and-shutdown-windows).
 - **Same tag, new asset is not an update.** If you replace a GitHub release
     without bumping the tag, existing RecompLauncher installs will not see it.
     Use a new version for real updates.

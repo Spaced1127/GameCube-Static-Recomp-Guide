@@ -24,6 +24,16 @@
 - [ ] CPU core choice (JIT/static) tested.
 - [ ] Update from previous release preserves `Game/`.
 
+## Window / shutdown
+
+- [ ] Fullscreen launch -> one ALT+F4 -> clean exit, no crash dump.
+- [ ] Windowed close -> clean exit.
+- [ ] F11 leave/re-enter fullscreen -> close.
+- [ ] Close after loading a gameplay save.
+- [ ] Fullscreen double-close.
+- [ ] No hidden `#32770` "Warning" dialog or modal panic.
+- [ ] Swap-chain image validation and failed-recreation logging present.
+
 ## Publish
 
 - [ ] Release notes/changelog/README match.

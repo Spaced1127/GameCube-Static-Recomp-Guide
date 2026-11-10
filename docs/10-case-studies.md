@@ -41,6 +41,16 @@ Entry point:  0x80003140
    static 42.1 fps / 0.704x at 1080p MSAA 8x; 1x/no AA 42.8 / 0.714. JIT
    reference: 59.94 / 1.000. The static module is the artifact; JIT became the
    default playable path.
+6. **Fullscreen ALT+F4 could crash or hang.** A swap-chain recreation cleared
+   the image list while `IsCurrentImageValid()` still returned true;
+   `VKGfx::BindBackbuffer` then wrote through a null texture (`0xC0000005`,
+   write to `0x40`, fault RVA `+0x2ffd00`). A failed recreation also opened a
+   modal "Warning" dialog, so the process appeared to hang. v0.1.4 creates the
+   window windowed, initializes the video backend, then applies borderless
+   fullscreen; it destroys the borderless window directly and validates the
+   current image before every present. See
+   [runtime/fullscreen](04-runtime-and-launcher.md#fullscreen-and-shutdown-windows)
+   and [troubleshooting](09-troubleshooting.md#window--shutdown).
 
 ### Shipping
 
@@ -54,6 +64,10 @@ Entry point:  0x80003140
 - The first v0.1.3 was replaced by a JIT-default build under the same tag; new
   installs get it, existing same-tag installs may need a reinstall. Use a new
   version for a normal update.
+- v0.1.4 fixed the fullscreen ALT+F4 close with the delayed/external fullscreen
+  model and swap-chain validation:
+  `SpongeBobRecomp-v0.1.4-Windows-x64.zip`, 28,798,211 bytes, SHA-256
+  `6F22280B185ADC580A048A7DE5B5E80A3236175BE4C3080EAF7A41A69EFAEA37`.
 
 ### Lessons
 

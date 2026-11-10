@@ -113,10 +113,32 @@ CPU/GPU split.
 | `invalid config.ini line` | unknown key is not the issue; a malformed line is | check the line number/value; parser skips sections |
 | black legal/title | EFB access off | set `efb_access=true` |
 | `SMC hash mismatch` repeatedly | cache-op/emitter or SMC range bug | fix cache emission/SMC tracking; do not disable verification |
-| crash on exit from fullscreen | window callback after config teardown | fix platform shutdown/fullscreen ordering |
+| crash/hang on exit from fullscreen | runtime fullscreen teardown, or swap-chain image cleared while still marked valid | windowed creation + delayed fullscreen; validate index/texture/framebuffer; log/skip failed recreation; see [04](04-runtime-and-launcher.md#fullscreen-and-shutdown-windows) and [09](09-troubleshooting.md#window--shutdown) |
 | controller missing | no GCPadNew.ini | auto-detect first SDL gamepad or generate the profile |
 | RecompLauncher sees no ISO | `kind: iso` and RVZ picked | convert to ISO |
 | RecompLauncher stale releases | 6-hour release cache | Settings -> Check Now / restart |
+
+## Fullscreen shutdown regression
+
+Symptom: fullscreen ALT+F4 hangs or exits with `0xC0000005`.
+
+1. Check Event Viewer / WER for the faulting module, exception code and offset.
+2. Open the minidump; `ExceptionInformation [1, 0x40]` means a write to
+   `null + 0x40`. Map the fault RVA and look for `VKGfx::BindBackbuffer`.
+3. Read the thread names: the crashing thread is usually `CPU-GPU thread`
+   (single-core) or the CPU thread. A stack through `Presenter::Present` and
+   `VKGfx::BindBackbuffer` points at the present path.
+4. For a hang, capture a mini dump with
+   `procdump64 -accepteula -mm <pid> <dump>`; a full `-ma` dump can be tens of
+   GB. Enumerate the process windows: a hidden `#32770` "Warning" dialog is a
+   blocking `PanicAlertFmt`, not a normal close.
+5. Inspect `SwapChain::IsCurrentImageValid()`, `DestroySwapChainImages()`,
+   `AcquireNextImage()` and whether `BindBackbuffer()` checks the current
+   texture/framebuffer.
+
+Fix: create the window windowed, apply fullscreen after video initialization,
+do not toggle fullscreen in the platform destructor, validate the current
+image, log/skip a failed recreation, and add a short shutdown grace period.
 
 ## Test matrix
 
@@ -127,6 +149,11 @@ Minimum before shipping:
 - [ ] pause menu, Options, Save, Load
 - [ ] memory-card save/load
 - [ ] fullscreen and windowed
+- [ ] ALT+F4 from fullscreen (one press) -> clean exit, no crash dump
+- [ ] F11 leave/re-enter fullscreen, then close
+- [ ] close after loading a gameplay save
+- [ ] fullscreen double-close
+- [ ] no hidden `#32770` "Warning" dialog or modal panic
 - [ ] controller (real pad)
 - [ ] one graphics settings change, confirm `[video]` log
 - [ ] RecompLauncher setup from ISO, verified badge, settings, Play
@@ -140,7 +167,8 @@ Minimum before shipping:
 2. Open the game page: manifest read, Easy Setup badge, Settings tab, CPU core.
 3. Setup: pick ISO, confirm disc ID/CRC badge, progress lines, `Game/` created.
 4. Change a setting; inspect `config.ini` and the next `[video]` log.
-5. Press Play: runner starts directly, fullscreen, controller works.
+5. Press Play: runner starts directly, fullscreen, controller works; ALT+F4
+   exits cleanly and writes no crash dump.
 6. Verify saves/logs folders and that an update preserved `Game/`.
 7. Confirm no game data in the release zip.
 

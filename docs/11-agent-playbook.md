@@ -57,6 +57,20 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - dumps/RVZ/check
 - no game data
 
+### Fullscreen / shutdown
+
+- Is the window created windowed, with borderless fullscreen applied after the
+  video backend initializes? Fix that first if not.
+- Does `~PlatformWin32()` call `ToggleFullscreen()`? Remove it; destroy the
+  borderless window directly.
+- Does `VKGfx::BindBackbuffer()` check the current texture and framebuffer?
+  Does `IsCurrentImageValid()` check index/texture/framebuffer? Add both.
+- Does `ResizeSwapChain()`/`RecreateSwapChain()` call `PanicAlertFmt()`? Log
+  and return `false` instead; a modal dialog during close looks like a hang.
+- Does one ALT+F4 exit? Add a 3-second power-button grace deadline.
+- Repro: fullscreen close, F11 leave/re-enter then close, close after a save,
+  windowed close, double-close.
+
 ## Phase 4 - Change one thing
 
 - Keep the diff small and explain the expected effect.
@@ -70,6 +84,8 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - Same state boots.
 - `fallback=0`, `smc_failed=0`, no new exceptions.
 - Target FPS/metadata met.
+- Fullscreen ALT+F4, F11 toggle, windowed close and close-after-save exit
+  cleanly; no crash dump or hidden dialog.
 - RecompLauncher setup/settings/Play verified if packaging.
 - Release downloaded back and checked if publishing.
 

@@ -20,8 +20,18 @@
 | `unsupported main DOL` | bad rip/patched DOL | verify SHA-256; use the retail DOL |
 | black legal/title/menu | EFB access off | `efb_access=true` |
 | no controller | no GCPadNew.ini | auto-detect first SDL gamepad; generate the profile |
-| crash on fullscreen exit | window callback after config teardown | fix shutdown ordering; leave fullscreen before destroy |
 | audio crackle/dropouts | DSP/HLE or CPU underrun | use correct DSP LLE/HLE, Cubeb, check CPU load; test `--audio Null` |
+
+## Window / shutdown
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `0xC0000005` at `VKGfx::BindBackbuffer` when closing fullscreen; write to `[rcx+0x40]` with `rcx=0` | swap-chain recreation cleared the images but `IsCurrentImageValid()` still returned true; current texture null | check index/texture/framebuffer; invalidate on destroy; guard null `VkSwapchainKHR`; apply fullscreen after video init |
+| Fullscreen ALT+F4 hangs, or needs two presses | runtime fullscreen teardown and power-button path; CPU thread in `Presenter::Present` while the swap chain is being cleared | delay/external fullscreen; no `ToggleFullscreen()` in the destructor; 3 s shutdown grace |
+| Hidden `#32770` "Warning: Failed to re-configure swap chain images" | `PanicAlertFmt` in `SwapChain::ResizeSwapChain`/`RecreateSwapChain` | log and return `false`; caller skips the frame; no modal panic during resize/close |
+| F11 leaves fullscreen at the wrong size; close restores the wrong rect | fullscreen applied before the windowed rect/style was captured | capture the windowed style/rect before entering; set both the platform and `m_window_fullscreen` flags |
+| Exclusive fullscreen leaves the desktop mode changed after a crash | display mode restored in the renderer destructor after the process died | restore from the launcher/helper after the process exits; use borderless by default |
+| WndProc touches config while the window is destroyed | focus/size messages after `Core::Shutdown` destroyed the Config layers | return early when the platform pointer is gone; guard handlers with `IsRunning()` |
 
 ## Performance
 

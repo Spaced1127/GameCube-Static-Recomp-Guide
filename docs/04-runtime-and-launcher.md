@@ -201,6 +201,53 @@ extraction") but should still validate it.
 - Fullscreen startup, borderless sizing and clean shutdown are platform work;
   test both windowed and fullscreen.
 
+## Fullscreen and shutdown (Windows)
+
+The fragile part is the window/swap-chain teardown, not the renderer. The
+Rocket Power and SpongeBob ports converged on the same model:
+
+1. Create the window **windowed**.
+2. Let `VideoBackend::Initialize()` create the swap chain against that window.
+3. After boot, apply borderless fullscreen to the same HWND: clear the
+   overlapped style and `WS_EX_CLIENTEDGE`, remove the menu, and
+   `SetWindowPos` to the monitor. The Rocket Power launcher does this from
+   outside the runner; SpongeBob does it from the platform's first main-loop
+   iteration after the video backend is ready.
+4. Keep a `m_fullscreen` flag for F11/Alt+Enter and UI state, but **do not call
+   `ToggleFullscreen()` in `~PlatformWin32()`**. Destroy the borderless window
+   directly. A borderless fullscreen window has no display mode to restore.
+5. If you support exclusive fullscreen, restore the display mode from a
+   separate owner (launcher/helper) after the process exits, not from the
+   renderer destructor.
+
+Why this matters:
+
+- Applying fullscreen before `VideoBackend::Initialize()` can create the swap
+  chain against a window whose surface/mode changes during boot. The first
+  `WM_SIZE`/recreate then races the first present.
+- Toggling fullscreen in the destructor sends `WM_SIZE` after `Core::Shutdown`.
+  The presenter can still be in its last frame, and the swap chain's images may
+  already be cleared.
+- A failed `RecreateSwapChain()` must not open a modal dialog. Log and skip the
+  frame; never dereference the current texture unless the image is valid.
+
+Minimum swap-chain invariants:
+
+- `IsCurrentImageValid()` checks the image index, texture and framebuffer, not
+  only the `vkAcquireNextImageKHR` result.
+- `DestroySwapChainImages()` clears the validity flag and index.
+- `AcquireNextImage()` returns early if the `VkSwapchainKHR` is null.
+- `BindBackbuffer()` caches and checks the current texture/framebuffer before
+  `OverrideImageLayout`/`TransitionToLayout`.
+- Failed `ResizeSwapChain()` / `RecreateSwapChain()` / `RecreateSurface()`
+  logs an error and returns `false`; the caller skips the frame.
+- Give the game a short grace period for the STM power-button event, then clear
+  the running flag. SpongeBob uses 3 seconds, so one ALT+F4 always exits.
+
+Regression matrix: fullscreen close, windowed close, F11 leave/re-enter then
+close, close after loading a save, and a double-close. Check WER/dumps; a
+hidden `#32770` "Warning" dialog is a panic alert, not a normal close.
+
 ## Frame rate
 
 The GameCube VI runs at **59.94 Hz**. A 59.9 title is full speed. Clamp
