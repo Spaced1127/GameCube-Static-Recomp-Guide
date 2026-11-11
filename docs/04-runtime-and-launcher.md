@@ -61,8 +61,7 @@ first runtime start. The runner's `--core` path does this and:
 - sets `MODERNGEKKO_STATICRECOMP` to `0` or `1`
 - skips static-module discovery for JIT
 - sets `config.allow_interpreter = true` for JIT, otherwise boot fails with
-  `initialization failed: no native module was supplied; use allow_interpreter
-  explicitly`
+  `initialization failed: no native module was supplied; use allow_interpreter explicitly`
 
 The module is normally auto-discovered as:
 
@@ -185,6 +184,99 @@ extraction") but should still validate it.
 - Keep `SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS` off by default; the launcher's
   overlay also uses the pad.
 - Map the standard GameCube buttons and document the mapping in `PLAYERS.md`.
+- Never invent a mapping from the console layout. Verify it in the game's own
+  menus: in WWE WrestleMania X8 the D-pad is a **taunt**, and the menus read
+  only the main stick. A launcher-side remap can fold the D-pad into the stick
+  and gate taunts behind a shoulder button, but that is a play aid, not the
+  retail layout.
+- The device string is `Source/Id/Name` (`SDL/0/DualSense Wireless Controller`,
+  `DInput/0/Keyboard Mouse`). A wrong string still loads the profile and binds
+  nothing, with no error. Prove the path end to end (bind a button, read the
+  guest pad state), do not just check that the file exists.
+- `GCPadNew.ini` is mandatory for some games. Without it, the frontend has no
+  in-game input menu and the game never leaves the title screen.
+
+### Rumble on its own thread
+
+Rumble is not free. Writing the pad every frame from the CPU thread produced a
+visible stutter in Rocket Power during landings and collisions, while the frame
+time of the surrounding frames stayed normal.
+
+- Own the output device on a dedicated rumble thread.
+- Coalesce the game's pulse train into one steady value instead of forwarding
+  every on/off transition.
+- Cap update rate and expire the rumble after a short timeout (3.33 s instead
+  of 10 s in RPBB v0.1.2); a stuck motor is a bug and a battery drain.
+- A controller unplug during play can still freeze an input thread. Detect it
+  and fail the input path, not the game.
+
+### Cache and process setup
+
+The launcher is the right place for host setup the runtime does not do:
+
+1. **Create `<user-dir>\Cache\Shaders`.** Dolphin creates it with a single-level
+   `File::CreateDir`, which fails when `Cache` does not exist:
+
+   ```text
+   Common\FileUtil.cpp:209 E[COMMON]: CreateDir: failed on .../Cache/Shaders/
+   ```
+
+   Consequence: the pipeline cache is not persisted, every launch rebuilds
+   pipelines, and first use appears as CPU frame-time spikes. After the
+   directory exists, the runtime writes `Vulkan-Pipeline-*.cache`,
+   `Vulkan-uber-vs/ps-*.cache`, `Vulkan-specialized-*-<ID>-*.cache` and
+   `Vulkan-gs-*.cache`.
+2. **Pin to physical cores when the CPU has SMT.** On a 16-thread CPU, pin to
+   `0xFF` and set `High` priority:
+
+   ```csharp
+   if (Environment.ProcessorCount >= 16)
+   {
+       process.ProcessorAffinity = (IntPtr)0xFF;   // physical cores 0-7
+       process.PriorityClass = ProcessPriorityClass.High;
+   }
+   ```
+
+   Left on all logical processors, the main thread and the DSP LLE thread end
+   up on SMT siblings: title/loading measured 47.7 FPS all-cores vs **58.5 FPS**
+   pinned, with main-thread load falling from 95.3% to 84.7%. Pin to physical
+   cores, not to one core.
+3. **Log for evidence.** One CSV row per second with
+   `timestamp,fps,working_set_mb,cpu_seconds` under `logs\` makes a user report
+   comparable with a local run.
+4. **Ship the DSP ROMs next to the runner.** `Sys/GC/dsp_rom.bin` and
+   `dsp_coef.bin` are required for DSP LLE; without them the runtime fails with
+   `Failed to initialize DSP emulation!` and never boots.
+
+### Runner provenance
+
+A release built from an older runner silently ignores newer settings. The
+Aggressive Inline port wrote `aspect=wide` / `widescreen_hack=true` correctly,
+but the shipped `moderngekko-run.exe` predated that code and stayed 4:3.
+
+- Rebuild the runner from the same runtime revision as the settings you expose.
+- Prove it from the log: the startup line
+  `[video] backend=... aspect=... widescreen=...` is the settings actually
+  applied. No line, no feature.
+- When shipping a **generic** runner (one binary that accepts any disc), it must
+  be built without `MODERNGEKKO_REQUIRED_DISC_ID` /
+  `MODERNGEKKO_REQUIRED_DOL_SHA256`, and the launcher must pass
+  `--core static` if that runner would otherwise pick the JIT path. A
+  game-specific runner that enforces its own disc ID cannot be reused for a
+  different title.
+
+### Host functions
+
+The runtime exposes host functions to the game (AX/zgui and friends). A missing
+one logs `Host function not Found` and returns a default, which may be harmless
+or may break a menu. Keep an inventory per game and decide explicitly:
+
+```text
+inlineOverlayGetNumContinues  (zgui "Continues")  -> stub returns 0, logged once
+```
+
+Do not let a missing host function spam the log at frame rate, and do not
+mistake it for a rendering or performance bug.
 
 ## Savestates
 
@@ -192,6 +284,28 @@ extraction") but should still validate it.
 - The launcher lists `StateSaves` and can pass `--load-state` on Play.
 - Savestates are large (20-50 MB) and game/version-specific; never commit them.
 - For deterministic benchmarks, always use the same state and note its path.
+- Build a **state ladder** as soon as the game reaches a menu: title, main
+  menu, character/level select, in-game. Use the deepest state for benchmarks
+  and the earlier ones for regression tests. It removes menu navigation from
+  every run and makes "does it still boot" cheap.
+
+## Memory cards
+
+The runtime uses a folder-based card, not a card image:
+
+```text
+<user-dir>/GC/<REGION>/Card A/*.gci
+```
+
+- The game creates its System Data on first use; record the file name and size
+  (`78-GW3E-...gci`, 114,752 bytes for WrestleMania X8).
+- Dolphin `.gci` files can be copied in. Dolphin card images (`.raw`, `.mcd`)
+  are not read directly.
+- Card folders are player data. Back them up in the launcher, never ship them,
+  and never let a test user dir overwrite a real one.
+- A game may load System Data before it will start a match. If the flow stops
+  after character select, check the card path and the prompt answer before
+  blaming the module.
 
 ## Window and log
 
@@ -241,8 +355,14 @@ Minimum swap-chain invariants:
   `OverrideImageLayout`/`TransitionToLayout`.
 - Failed `ResizeSwapChain()` / `RecreateSwapChain()` / `RecreateSurface()`
   logs an error and returns `false`; the caller skips the frame.
+- `Presenter::Present()` must not enter `CoreTiming::SleepUntil()` when the
+  core is stopping. `CPUManager::Stop()` waits for the CPU thread to
+  acknowledge `PowerDown`, and a long frame-pacing sleep makes the close hang.
 - Give the game a short grace period for the STM power-button event, then clear
   the running flag. SpongeBob uses 3 seconds, so one ALT+F4 always exits.
+- Add a last-resort shutdown watchdog (8 seconds in SpongeBob). If a Vulkan,
+  shader or driver wait still blocks a processed close, exit cleanly instead of
+  leaving an unresponsive process. A normal close is under a second.
 
 Regression matrix: fullscreen close, windowed close, F11 leave/re-enter then
 close, close after loading a save, and a double-close. Check WER/dumps; a

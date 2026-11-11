@@ -38,6 +38,25 @@ Build:
 cmake --build build\moderngekko --target moderngekko-run moderngekko-launcher -j 8
 ```
 
+### Build from a short path
+
+`moderngekko-port build` writes its module cache under
+`<output>\<DISC-ID>\<dol-sha>-<toolchain-hash>\`. Long project names with
+spaces push the MSVC object path past the 250-character limit and the build
+fails inside the object writer, not with a clear "path too long" message.
+
+Build from a short output root and copy the DLL back:
+
+```powershell
+moderngekko-port.exe build work\game --backend c --toolchain clang --opt-level 3 --output C:\mygame\modules
+copy /Y C:\mygame\modules\DISCID\<cache>\gDISCID_recomp.dll build\gDISCID_recomp.dll
+```
+
+The `<toolchain-hash>` part of the cache key changes with the compiler version,
+so two modules built with different Clang/MSVC installs land in different
+folders even from the same DOL. Keep the path and the hash in `STATE.md`; it is
+how you tell which DLL is actually loaded.
+
 ## 1. Generate the C
 
 ```powershell
@@ -94,6 +113,29 @@ Why:
 - **PGO** is the difference between a 50 fps module and a 59-60 fps module.
   Collect it on **gameplay**, not only the title screen.
 
+### Verify the defines actually reached the compiler
+
+The generated header defaults are:
+
+```c
+#define DOLRECOMP_C_LOOP_CYCLE_BUDGET 256
+#define DOLRECOMP_C_MAX_CALL_DEPTH 24
+```
+
+Shipping modules want `4096` / `128`, but a build script can look correct and
+still use the defaults. One project produced several PGO modules this way and
+only noticed when it diffed against a known-good `CMakeCache.txt`. Check the
+real build files, not the docs:
+
+```powershell
+Select-String -Path build\modules\...\module-pgo\CMakeCache.txt -Pattern 'DOLRECOMP_C_'
+Select-String -Path build\modules\...\module-pgo\build.ninja -Pattern 'DOLRECOMP_C_'
+```
+
+The compiled flags should also show all of `-O3`, `-flto=thin`,
+`-fvisibility=hidden`, `-ffp-contract=off` and `-fno-fast-math`. If `-march`
+or the defines are missing, the module is not the build you think it is.
+
 ## 3. PGO recipe
 
 Build an instrumented module (`-fprofile-generate`), run a representative
@@ -127,6 +169,32 @@ Collect the profile across several areas and states, not one room. A profile
 from the title screen will optimize the wrong code. If the game has a frame
 limiter, the idle loop will dominate the profile; that is expected and is a
 reason to use the idle-skip setting.
+
+Keep **separate boot and play profiles** and merge both. Boot/loading code
+(asset streaming, shader setup, first-frame initialization) and steady-state
+gameplay have almost disjoint hot sets; a play-only profile can leave the
+load path unoptimized and a boot-only profile optimizes the wrong half.
+
+```powershell
+$env:LLVM_PROFILE_FILE="work\pgo\boot-%p.profraw"
+runner ... --graphics Vulkan --audio Null
+$env:LLVM_PROFILE_FILE="work\pgo\play-%p.profraw"
+runner ... --load-state work\gameplay.state ...
+llvm-profdata merge -o work\pgo\merged.profdata work\pgo\boot-*.profraw work\pgo\play-*.profraw
+```
+
+A nonzero training-run exit does **not** mean the profile is dead. One PGO run
+exited `0xC000001D` while the game window was closing, so the build helper
+refused to merge it, but the `.profraw` had already flushed and merged into a
+valid 1,197-function profile. Check the file before throwing the run away:
+
+```powershell
+llvm-profdata show --all-functions --counts work\pgo\boot-*.profraw | Select-Object -First 20
+```
+
+Sanity numbers from a real profile (RPBB): 1,197 functions, 704,004 blocks,
+maximum function count ~973 million, maximum internal block count ~2.2 billion.
+A profile with a handful of functions or a tiny total count is a bad capture.
 
 Inspect the profile:
 
@@ -181,6 +249,17 @@ The runner should require:
 - retail `main.dol` SHA-256
 - optional REL/asset hashes if the game uses them
 - module ABI version and entry point
+
+Run `moderngekko-port inspect work\game` (or the template's equivalent) before
+the first boot. It reports the disc ID, entry point and DOL hash from the
+extracted tree, so a wrong extraction fails here instead of at module load.
+
+Inspect can also fail for a non-obvious reason: a `std::filesystem`
+`generic_string()` call throws on file names that are not representable in the
+ANSI codepage, and the exception reaches `std::terminate`/`abort()` (exit
+`0xC0000409`). Retail discs do ship Shift-JIS developer files. Sort with
+`lexically_relative()` and build names with `generic_u8string()`. See
+[09-troubleshooting.md](09-troubleshooting.md#build-and-extraction).
 
 At boot, verify `[staticrecomp] module loaded: ... entry=0x...` and that the
 module's code ranges/SMC tables are populated. `fallback=0`, `smc_failed=0`

@@ -33,6 +33,17 @@
 - [ ] Save state loaded.
 - [ ] Audio backend chosen.
 
+## Host setup
+
+- [ ] `<user-dir>\Cache\Shaders` created by the launcher.
+- [ ] Affinity pinned to physical cores on SMT CPUs; `High` priority.
+- [ ] `Sys/GC/dsp_rom.bin` and `dsp_coef.bin` next to the runner.
+- [ ] Shader/pipeline cache written after a run.
+- [ ] Windows per-app mixer checked if audio is silent.
+- [ ] State ladder captured (title, menu, select, in-game).
+- [ ] Automation input verified (pad taps, first command after load-state sent
+      twice).
+
 ## Performance
 
 - [ ] Baseline low/high.

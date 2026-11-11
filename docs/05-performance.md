@@ -40,6 +40,65 @@ The same state through Dolphin's JIT core:
 
 That is the evidence that a static/JIT decision is warranted.
 
+## Fix the host before the build
+
+Two host problems look exactly like codegen problems. Check them before a
+benchmark, and always note them in the result:
+
+| Check | Failure looks like | Fix |
+|---|---|---|
+| `<user-dir>\Cache\Shaders` exists | first-use CPU spikes, pipeline rebuild every launch, 1-3 ms GPU with 100 ms+ frames | launcher creates the directory; compare a cold vs warm run |
+| CPU affinity pinned to physical cores | 85-95% main-thread load, DSP thread at ~15% on an SMT sibling, 10-20% "missing" | `0xFF` on a 16-thread CPU, `High` priority |
+
+Measured on a Ryzen 7 7800X3D (8 cores / 16 threads), same scene and module:
+
+| Affinity | FPS | Main thread | DSP LLE |
+|---|---:|---:|---:|
+| all logical cores | 47.7 | 95.3% | 17.5% |
+| physical cores 0-7 (`0xFF`) | **58.5** | 84.7% | 15.6% |
+
+This is not a substitute for codegen work, but it is a one-line change and it
+changes the baseline you are about to optimize.
+
+## Frame-time capture
+
+`status.txt` gives averages; a 1.5 s stall hides inside a 59.8 average. Capture
+per-frame times when the symptom is "it hitches" rather than "it is slow".
+
+PresentMon 2.5.1 was used with `--process_name <exe>`, `--output_file <csv>`
+and `--no_console_stats`. Two traps:
+
+- `--timed` and `--stop_existing_session` can hang and leave a stale ETW
+  session. Start PresentMon detached with a unique `--session_name`, then start
+  the game, then stop the process and terminate the session by name.
+- Stop the capture before closing the game, or the last frames can be the
+  teardown.
+
+Read p50/p95/p99 and the count above 33/50/100 ms, not only the average:
+
+```text
+smooth window: 530 frames, 8.84 s -> 59.84 FPS
+  p50 16.69 ms   p95 17.30 ms   p99 18.06 ms
+  3 frames > 20 ms, 1 frame > 33 ms, GPU busy 2-3 ms
+
+stall window: 229 frames, 8.89 s -> 25.71 FPS
+  37 frames > 50 ms, 31 > 100 ms
+  worst 1539.7 ms, 550.9 ms, then a ~3.5 s burst of 100-133 ms frames
+  CPU busy tracks frame time; GPU 2.1 ms
+```
+
+When GPU busy is 2-3 ms and CPU busy matches the frame, it is a **CPU-side
+stall**. Before calling it a codegen problem:
+
+1. Is the pipeline cache warm (`Cache\Shaders` exists)?
+2. Does the log have a load line at that time (`Loading scene data`)?
+3. Did the window include a pause, menu, minimize or alt-tab?
+4. Does it reproduce from a save state with no other app running?
+
+If the answer is "no log line, no reproduction", record it as an open question.
+The Aggressive Inline project captured exactly this window and did not attribute
+it; that is the right outcome, not a guessed fix.
+
 ## Measured progression (SpongeBob living room)
 
 From the performance notes, same state, Vulkan, EFB considerations as noted:
@@ -208,6 +267,19 @@ blaming the port.
 - Resolution/MSAA/SSAA/AF affect GPU only.
 - VSync off for headroom measurement; on for shipping.
 - Frame cap at 1.0.
+
+### Host
+
+- Pin the process to physical cores (`0xFF` on 16 threads) and set `High`
+  priority; do not pin to a single core.
+- Create `<user-dir>\Cache\Shaders` and warm the pipeline cache before a
+  benchmark.
+- Move controller rumble writes to their own thread and coalesce the pulse
+  train.
+- Close background GPU/CPU load (browser, capture card, local LLM, build) and
+  note it in the result.
+- Run the same scene at 3x native to prove the CPU holds 59.94 when the GPU has
+  headroom (Aggressive Inline: 59.84 average at 1920x1344, GPU 2-3 ms).
 
 ### What not to do
 

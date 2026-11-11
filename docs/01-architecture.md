@@ -50,6 +50,13 @@ module. That is a supported playable path, not a failure of the static recomp.
 - **EFB access**: accurate EFB reads needed by 2D legal/title/menu screens.
 - **SMC**: self-modifying code; the runtime verifies code chunks and falls back
   to the interpreter when a chunk hash changes.
+- **Host function**: a guest call the runtime implements natively (OS, GX, AX,
+  zgui, ...). A missing one logs `Host function not Found` and returns a
+  default.
+- **Pipeline cache**: `<user-dir>\Cache\Shaders`; without it every launch
+  recompiles shaders and the first use shows up as CPU frame-time spikes.
+- **Folder memory card**: `<user-dir>\GC\<REGION>\Card A\*.gci`; not a card
+  image, and `.gci` files can be copied in from Dolphin.
 - **Idle loop**: a tight guest loop waiting for a VI/audio event; skipping it
   with `StaticRecompIdlePC` avoids millions of host iterations per frame.
 - **CPU core selection**: `MODERNGEKKO_STATICRECOMP=0` selects Dolphin's JIT;

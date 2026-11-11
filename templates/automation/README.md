@@ -42,6 +42,16 @@ path=C:/absolute/path/gameplay.state
 See the runtime's `automation_protocol.cpp` for the full field list
 (`pad`, `clear_pad`, `pause`, `resume`, `read_memory`, `write_memory`).
 
+Input rules learned from real ports:
+
+- The first pad command after `--load-state` is swallowed. Send it twice.
+- Short taps (3 frames) every ~3 s advance most menus; long holds can be
+  ignored.
+- Never send the all-buttons combo; it includes B and can back out of a screen.
+- Synthetic `keybd_event`/`SendKeys` did not reach the game; use `pad_frames`.
+- Screenshots come from the guest framebuffer, so other windows do not matter.
+- Read `fps` after warm-up; boot/streaming reads 2-3 while assets load.
+
 `status.txt` is the evidence file. Its fields are documented in
 [status-fields.md](status-fields.md).
 

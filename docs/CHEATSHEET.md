@@ -27,6 +27,38 @@ build\moderngekko\moderngekko-port.exe build work\game --backend c --toolchain m
 # -march=x86-64-v3 -O3 -flto=thin -fprofile-use=... -DDOLRECOMP_C_LOOP_CYCLE_BUDGET=4096 -DDOLRECOMP_C_MAX_CALL_DEPTH=128
 ```
 
+## Inspect / verify a game root
+
+```powershell
+build\moderngekko\moderngekko-port.exe inspect work\game
+# expect: Game name, Disc ID, entry, DOL SHA-256
+# 0xC0000409 here? look for non-ASCII names:
+Get-ChildItem work\game\files -Recurse -File |
+  Where-Object { $_.Name -match '[^\x20-\x7E]' } | Select-Object -First 20 FullName
+```
+
+## Host setup (one time per user dir)
+
+```powershell
+New-Item -ItemType Directory -Force "$user\Cache\Shaders" | Out-Null
+# launcher: if ProcessorCount >= 16 -> ProcessorAffinity = 0xFF, PriorityClass = High
+# release must contain Sys\GC\dsp_rom.bin and dsp_coef.bin next to the runner
+```
+
+## Automation input
+
+```text
+# commands\a01.txt  (send twice: the first pad command after --load-state is swallowed)
+command=pad_frames
+port=0
+frames=3
+a=1
+```
+
+Short taps every ~3 s beat long holds. Never send the all-buttons combo.
+Screenshots come from the guest framebuffer, so background windows do not
+matter.
+
 ## Run
 
 ```powershell
@@ -67,9 +99,24 @@ runner ... --automation-dir work\auto
 ## PGO
 
 ```powershell
-llvm-profdata merge -o work\pgo\merged.profdata work\pgo\*.profraw
+llvm-profdata merge -o work\pgo\merged.profdata work\pgo\boot-*.profraw work\pgo\play-*.profraw
 llvm-profdata show --topn=60 --counts work\pgo\merged.profdata
+# training run exited nonzero? the .profraw is often still valid:
+llvm-profdata show --all-functions --counts work\pgo\*.profraw | Select-Object -First 20
+# verify the defines reached the compiler:
+Select-String build\modules\...\module-pgo\CMakeCache.txt -Pattern 'DOLRECOMP_C_'
 ```
+
+## Performance capture
+
+```powershell
+# PresentMon: start detached with a unique session, then start the game
+PresentMon.exe --process_name mygame.exe --output_file work\pm.csv --no_console_stats --session_name myrecomp
+# stop by process/session name afterwards (do not use --timed; it can hang)
+```
+
+Read p50/p95/p99 and frames over 33/50/100 ms. GPU busy 2-3 ms with a
+1000 ms frame is CPU-side.
 
 ## RecompLauncher
 
@@ -108,4 +155,6 @@ absence of game data.
 - No generated-code edits.
 - No commit/tag/release without approval.
 - Measure low/high and static/JIT before optimizing.
+- Check the host first: affinity, `Cache\Shaders`, runner provenance, muted
+  audio.
 - 59.9 FPS = 59.94 Hz = full speed.

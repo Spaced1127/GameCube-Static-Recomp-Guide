@@ -4,12 +4,17 @@ A practical, battle-tested reference for turning a retail GameCube `main.dol`
 into a native Windows port with **DolRecomp**, a **ModernGekko/Dolphin-derived
 runtime**, and **RecompLauncher** packaging.
 
-This guide was assembled from two working projects:
+This guide was assembled from five working projects:
 
 - **SpongeBob SquarePants: Revenge of the Flying Dutchman** (`GSQE78`)
   <https://github.com/Spaced1127/SpongeBobRecomp>
 - **Rocket Power: Beach Bandits** (`GBQE78`)
   <https://github.com/Spaced1127/RPBB-Static-Recomp>
+- **Aggressive Inline** (`GILE51`)
+  <https://github.com/Spaced1127/Aggressive-Inline-Static-Recomp>
+- **WWE WrestleMania X8** (`GW3E78`) and **WWE WrestleMania XIX** (`GW9E78`)
+- The Rocket Power decomp, asset-format and Switch experiments, which informed
+  the asset and secondary-target chapters
 
 No game data, disc images, DOL files, textures, audio, or cover art are
 included in this repository. Every project still requires the player's own
@@ -29,6 +34,8 @@ legally dumped disc.
 | Shipping through RecompLauncher | [docs/07-recomplauncher.md](docs/07-recomplauncher.md) |
 | Adding icons and cutting a release | [docs/08-icons-and-release.md](docs/08-icons-and-release.md), [checklists/RELEASE.md](checklists/RELEASE.md) |
 | Stuck on a failure | [docs/09-troubleshooting.md](docs/09-troubleshooting.md) |
+| Working with the game's archives, textures, meshes or levels | [docs/12-asset-formats.md](docs/12-asset-formats.md) |
+| Shipping to a handheld, console or secondary target | [docs/13-other-targets.md](docs/13-other-targets.md) |
 | An AI agent picking up the work | [AGENTS.md](AGENTS.md), [docs/11-agent-playbook.md](docs/11-agent-playbook.md) |
 | Just need the commands | [docs/CHEATSHEET.md](docs/CHEATSHEET.md) |
 
@@ -43,7 +50,8 @@ legally dumped disc.
 4. **Boot the runtime.** `runner --game <Game> --module <dll> --user-dir <dir>`.
    Confirm the module loads, no fallback instructions, no SMC hash failures.
 5. **Baseline CPU vs GPU.** Drop to 1x/no AA. If FPS barely moves, it is CPU;
-   if it jumps, it is GPU.
+   if it jumps, it is GPU. Fix the host first: pin to physical cores, create
+   `Cache\Shaders`, warm the pipeline cache, and check the app is not muted.
 6. **Profile.** Use PGO block counts and
    `STATICRECOMP_DISPATCH_SAMPLES=1`. Look for the frame-limiter loop, FP
    helpers, cache control, host calls, and GX FIFO traffic.
@@ -68,7 +76,10 @@ legally dumped disc.
 - **Do not edit generated C** and call it fixed. Fix the emitter or the
     runtime, then regenerate.
 - **Measure before optimizing.** Lower the GPU load first; a CPU bottleneck
-    will not move.
+    will not move. Then check the host: affinity, shader cache, foreground load.
+- **A release must be built from the runner you tested.** A stale runner
+  silently ignores new settings; prove the option reached the runtime from the
+  `[video]` log line.
 - **A 59.9 title is full speed.** The VI runs at 59.94 Hz; the target is 59.94,
     not 60.000.
 - **External load is real.** A local LLM, browser, or compositor using the GPU
@@ -100,8 +111,10 @@ docs/06-debugging-and-testing.md logs, automation, save states, dispatch samples
 docs/07-recomplauncher.md     SDK levels, manifest, settings, prepare, dumps
 docs/08-icons-and-release.md  ICO/RC embedding, packaging, release verification
 docs/09-troubleshooting.md    symptom -> cause -> fix
-docs/10-case-studies.md       SpongeBob and Rocket Power, with numbers
+docs/10-case-studies.md       five ports, with numbers and the bugs that mattered
 docs/11-agent-playbook.md     ordered playbook for an AI agent
+docs/12-asset-formats.md      archive/texture/mesh/level formats and validation
+docs/13-other-targets.md      handheld/console paths, honest port labelling
 docs/appendix/                raw SpongeBob performance/test/state notes
 docs/recomplauncher.schema.json  offline copy of the SDK schema
 templates/                    manifest, RC/icon, PGO, release, automation, AGENTS
@@ -130,6 +143,25 @@ From the SpongeBob project, in order of impact:
 8. **JIT default** when the static module is CPU-limited outdoors: the same
    Bikini Bottom save is 42.1 fps static and 59.94 fps JIT. The Rocket Power
    release uses the same split.
+
+Across the later ports:
+
+1. **Host setup before codegen.** Pinning to physical cores (47.7 -> 58.5 fps on
+   Rocket Power) and creating `Cache\Shaders` removed two "codegen" symptoms
+   without touching the module.
+2. **Clang holds the console rate in-match.** WrestleMania X8: 40.7 fps MSVC vs
+   59.94 fps Clang on the same save state. Aggressive Inline: 59.9 fps at 3x
+   native with the GPU at 2-3 ms.
+3. **Rebuild the runner with the settings.** A stale runner made widescreen look
+   broken; the `[video] aspect=... widescreen=...` line is the proof.
+4. **PGO only counts if the defines are real.** Several modules had run at the
+   generated defaults (256/24) while the docs said 4096/128.
+5. **Fix the hash walk, not the disc.** Two Shift-JIS PSD names crashed
+   `inspect` and the runner with `0xC0000409`.
+6. **Rumble belongs on its own thread.** Controller writes on the CPU thread
+   caused a landing/collision stutter in Rocket Power.
+7. **Verify controller mappings on the game's menus.** WMX8's D-pad is a taunt,
+   not movement; the menus only read the main stick.
 
 The full tables and method are in [docs/05-performance.md](docs/05-performance.md).
 

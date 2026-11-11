@@ -12,7 +12,9 @@ own `AGENTS.md`/`STATE.md` first if one exists.
 4. `docs/05-performance.md` if the task is performance
 5. `docs/07-recomplauncher.md` / `docs/08-icons-and-release.md` if the task is
    packaging
-6. The target project's `STATE.md`, build scripts and latest logs
+6. `docs/12-asset-formats.md` if the task touches archives/textures/levels, or
+   `docs/13-other-targets.md` for a non-Windows target
+7. The target project's `STATE.md`, build scripts and latest logs
 
 ## Hard rules
 
@@ -35,6 +37,9 @@ own `AGENTS.md`/`STATE.md` first if one exists.
 Before saying a change is done:
 
 ```powershell
+# inspect the extracted tree (disc ID, entry, DOL hash)
+moderngekko-port inspect <Game>
+
 # compile
 cmake --build build\moderngekko --target moderngekko-run moderngekko-launcher -j 8
 
@@ -55,6 +60,10 @@ manifest schema, top-level contents, icons, and absence of game data.
 
 Never assume a dip is GPU or CPU:
 
+0. **Fix the host first.** Pin to physical cores (`0xFF` on 16 threads), create
+   `<user-dir>\Cache\Shaders`, warm the pipeline cache, confirm the app is not
+   muted, and close background GPU/CPU load. Two of these were worth ~20% and
+   removed false "codegen" symptoms.
 1. Run the same state at **1x, no MSAA/SSAA** and at the shipped settings.
 2. If low settings are not significantly faster, it is CPU-bound.
 3. Run the **JIT reference** (`MODERNGEKKO_STATICRECOMP=0` or `--core jit`).
@@ -63,6 +72,8 @@ Never assume a dip is GPU or CPU:
    micro-optimizing a 40% static gap.
 5. If static is close, profile with PGO counts and
    `STATICRECOMP_DISPATCH_SAMPLES=1` before changing code.
+6. If a release ignores a setting, check that the runner binary was rebuilt
+   from the current runtime (the `[video]` line proves it).
 
 The GameCube VI is **59.94 Hz**. A title showing 59.9 is full speed.
 

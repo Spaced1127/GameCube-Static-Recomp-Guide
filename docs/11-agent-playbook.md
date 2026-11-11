@@ -38,9 +38,15 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - `allow_interpreter` -> JIT mode
 - black 2D -> EFB access
 - SMC/fallback -> emitter/runtime
+- `0xC0000409` from `inspect`/boot -> non-ASCII file names in the extracted
+  tree (`generic_string()` throw -> `__fastfail`)
+- no DSP init -> `Sys/GC/dsp_rom.bin` + `dsp_coef.bin` missing
+- settings ignored -> stale runner binary, not the config parser
 
 ### Performance
 
+0. Fix the host: physical-core affinity, `Cache\Shaders`, warm cache, unmuted
+   app, closed background load.
 1. Low (1x/no AA) vs high.
 2. Static vs JIT.
 3. External GPU/CPU load.
@@ -56,6 +62,15 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - config path/keys
 - dumps/RVZ/check
 - no game data
+
+### Secondary target
+
+- Which path is this: Dolphin-derived runtime (emulator port), cross-compiled
+  static module, or from-scratch viewer?
+- Is the emulation speed limit 100%? A 90% limit looks like a CPU bottleneck.
+- Was the clock profile verified while the game ran, and on the right title ID?
+- Is the release labelled honestly ("runs the retail game on an emulator port",
+  not "native port")?
 
 ### Fullscreen / shutdown
 

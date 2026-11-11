@@ -3,6 +3,11 @@
 ## Artifact
 
 - [ ] Built from documented commands, not an ad-hoc tree.
+- [ ] Runner rebuilt from the current runtime revision; every shipped setting
+      appears in the `[video]`/`[audio]` log line.
+- [ ] `Sys/GC/dsp_rom.bin` and `dsp_coef.bin` shipped next to the runner.
+- [ ] Generic runner built without a disc-ID/DOL gate if it accepts any game.
+- [ ] Memory-card folder created and backed up; no player save committed.
 - [ ] Launcher/runner icons embedded and extracted successfully.
 - [ ] `recomplauncher.json` at the top.
 - [ ] Schema validation: 0 errors.
@@ -31,6 +36,7 @@
 - [ ] F11 leave/re-enter fullscreen -> close.
 - [ ] Close after loading a gameplay save.
 - [ ] Fullscreen double-close.
+- [ ] 10 repeated fullscreen closes: no hang, crash or dump.
 - [ ] No hidden `#32770` "Warning" dialog or modal panic.
 - [ ] Swap-chain image validation and failed-recreation logging present.
 
