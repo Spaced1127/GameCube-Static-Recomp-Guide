@@ -149,6 +149,14 @@ the same setting in two files without a precedence rule.
 
 ## Launcher
 
+Every port ships a launcher built from the shared shell, at feature parity with
+every other port. Only the theme changes: product and executable names, icons,
+accent, strings, `PLAYERS.md` and manifest labels. Parity means the same
+capabilities in the same places, not identical pixels. A capability added for
+one title goes into the shell and every launcher is rebuilt; a title fork is a
+bug. The parity table, theme rules and audit are in
+[15-launcher-parity.md](15-launcher-parity.md#the-launcher-parity-contract).
+
 The ImGui launcher handles:
 
 - disc import/extraction (`--extract <iso>` for RecompLauncher)

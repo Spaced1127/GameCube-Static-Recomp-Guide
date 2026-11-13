@@ -62,6 +62,8 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - config path/keys
 - dumps/RVZ/check
 - no game data
+- launcher parity: shared shell, same features, per-title theme only
+- manifest and custom launcher agree on user dir/module/config paths
 
 ### Secondary target
 
@@ -154,5 +156,6 @@ FPS below target?
 - Boot to gameplay from a real state.
 - Target performance holds; limitation documented if not.
 - RecompLauncher manifest validates; setup/settings/Play verified.
+- Launcher parity table passed; theme is this title only.
 - No game data in repo/release.
 - User approved public actions.

@@ -127,6 +127,18 @@ python tools\validate_manifest.py docs\recomplauncher.schema.json `
 
 Check: manifest at top of zip, start/prepare/config/settings, no game data.
 
+## Launcher parity
+
+```text
+same shell, same features, new theme
+parity: setup settings input states cards host logs updates close
+theme:  names icons accent strings manifest labels PLAYERS.md
+audit:  no other title's name, icon or disc ID anywhere
+```
+
+The custom launcher and RecompLauncher use the same user dir, module path and
+config path. A missing feature goes into the shell, not one title's fork.
+
 ## Icons
 
 ```powershell
@@ -155,6 +167,7 @@ absence of game data.
 - No generated-code edits.
 - No commit/tag/release without approval.
 - Measure low/high and static/JIT before optimizing.
+- Launcher parity: shared shell, per-title theme only.
 - Check the host first: affinity, `Cache\Shaders`, runner provenance, muted
   audio.
 - 59.9 FPS = 59.94 Hz = full speed.

@@ -4,6 +4,12 @@ RecompLauncher installs and updates a recomp from GitHub releases. The recomp
 itself does not change; the launcher reads one `recomplauncher.json` and does
 what a player would do by hand.
 
+A port has two launcher surfaces: the **themed custom launcher** that owns
+setup, settings, states and logs, and the **RecompLauncher manifest** that
+distributes it. They expose one feature set with one user dir; the parity
+contract is in
+[15-launcher-parity.md](15-launcher-parity.md#the-launcher-parity-contract).
+
 Official material:
 
 - Guide: <https://recomplauncher.com/sdk-files/guide.md>
@@ -251,6 +257,21 @@ uncapped/150%/200% frame rate if the game is capped.
 - Replacing a release asset without changing the tag does **not** create an
   update for existing installs. Bump the version for real updates.
 - Pre-releases are betas; normal players stay on the latest full release.
+
+## Manifest and themed launcher must agree
+
+The manifest is not a second settings system. It drives the same files the
+custom launcher edits:
+
+- same `{local}` user dir for config, saves, cards, logs and states;
+- same module path and configuration file;
+- `prepare` writes the extracted tree the custom launcher expects;
+- every setting exposed in the manifest is read by the runtime, and the next
+  `[video]`/`[audio]` line shows it;
+- a generic runner has no disc gate; a per-title runner is not reused.
+
+If the two surfaces disagree, one of them is a support case the other cannot
+reproduce.
 
 ## Test the actual UI
 

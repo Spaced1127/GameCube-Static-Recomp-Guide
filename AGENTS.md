@@ -14,13 +14,19 @@ own `AGENTS.md`/`STATE.md` first if one exists.
    packaging
 6. `docs/12-asset-formats.md` if the task touches archives/textures/levels, or
    `docs/13-other-targets.md` for a non-Windows target
-7. The target project's `STATE.md`, build scripts and latest logs
+7. `docs/15-launcher-parity.md` if adding a launcher feature or shipping a
+   release
+8. The target project's `STATE.md`, build scripts and latest logs
 
 ## Hard rules
 
 - **No game data** in Git, releases, test fixtures or generated docs: no
   ISO/RVZ/WBFS/GCM, DOL, FST, `Game/`, textures, audio, saves or cover art.
 - **No generated-code edits.** Fix the emitter/runtime and regenerate.
+- **Launcher parity, per-title theme.** Every port ships the shared launcher
+  feature set; only names, icons, strings and manifest labels change. Add a
+  feature to the shell, never to one title's fork. See
+  [docs/15](docs/15-launcher-parity.md#the-launcher-parity-contract).
 - **No clean builds** unless the user explicitly asks. DolRecomp/Dolphin
   builds and PGO data are expensive.
 - **No commit, tag, release or push** without explicit user approval. A request
@@ -106,4 +112,6 @@ Create/maintain a `STATE.md` in the target project:
 - The measured target is met (or the limitation is stated with evidence).
 - Logs show no new fallbacks/SMC failures/crashes.
 - RecompLauncher manifest validates and the release contains no game data.
+- The launcher passes the parity table in `docs/15` on a fresh user dir, and
+  the theme audit shows no other title's branding or disc ID.
 - The user has approved any public action.

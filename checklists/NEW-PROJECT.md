@@ -53,6 +53,18 @@
 - [ ] Core decision: static / JIT default / both.
 - [ ] Frame cap at 59.94 Hz.
 
+## Launcher parity and theme
+
+- [ ] Launcher built from the shared shell, not a per-title copy.
+- [ ] Parity features present: setup, settings, input, states, cards, host
+      checks, logs, updates, clean close.
+- [ ] Theme applied: product/exe names, launcher badge, runner cover, accent,
+      strings, manifest labels.
+- [ ] No other title's name, icon or disc ID in the build or manifest.
+- [ ] Theme needed no code change; any missing feature went into the shell.
+- [ ] Custom launcher and manifest use the same user dir, module and config
+      paths.
+
 ## Packaging
 
 - [ ] RecompLauncher manifest.

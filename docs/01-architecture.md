@@ -57,6 +57,13 @@ module. That is a supported playable path, not a failure of the static recomp.
   recompiles shaders and the first use shows up as CPU frame-time spikes.
 - **Folder memory card**: `<user-dir>\GC\<REGION>\Card A\*.gci`; not a card
   image, and `.gci` files can be copied in from Dolphin.
+- **Launcher shell**: the shared launcher code behind every port. Every title
+  gets the same feature set, settings layout and paths; the title supplies a
+  theme, not a fork. See
+  [15-launcher-parity.md](15-launcher-parity.md#the-launcher-parity-contract).
+- **Theme pack**: the per-title data a launcher build consumes: product and
+  executable names, icons, accent, player-facing strings and manifest labels.
+  Data and art only; no game logic.
 - **Idle loop**: a tight guest loop waiting for a VI/audio event; skipping it
   with `StaticRecompIdlePC` avoids millions of host iterations per frame.
 - **CPU core selection**: `MODERNGEKKO_STATICRECOMP=0` selects Dolphin's JIT;

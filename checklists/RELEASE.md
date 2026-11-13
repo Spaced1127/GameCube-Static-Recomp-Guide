@@ -8,6 +8,12 @@
 - [ ] `Sys/GC/dsp_rom.bin` and `dsp_coef.bin` shipped next to the runner.
 - [ ] Generic runner built without a disc-ID/DOL gate if it accepts any game.
 - [ ] Memory-card folder created and backed up; no player save committed.
+- [ ] Launcher built from the current shell; parity table in `docs/15` passed
+      on a fresh user dir.
+- [ ] Theme is this title only: names, icons, strings and manifest labels; no
+      other title's branding or disc ID in binaries, README or logs.
+- [ ] Themed launcher and `recomplauncher.json` use the same user dir, module
+      path and config path.
 - [ ] Launcher/runner icons embedded and extracted successfully.
 - [ ] `recomplauncher.json` at the top.
 - [ ] Schema validation: 0 errors.

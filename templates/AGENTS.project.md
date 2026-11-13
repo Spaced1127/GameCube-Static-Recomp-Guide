@@ -10,6 +10,7 @@ Read the shared GameCube Static Recomp Guide first:
 - DOL SHA-256: TBD
 - Redump: size / CRC-32
 - Runtime: ModernGekko/Dolphin template
+- Launcher: shared shell + per-title theme (guide docs/15)
 - Playable core: JIT / static (choose after the benchmark)
 - Release: TBD
 
@@ -20,6 +21,8 @@ Read the shared GameCube Static Recomp Guide first:
 - Do not edit generated C; fix the emitter/runtime and regenerate.
 - Build and run a real save state before claiming a fix.
 - Do not commit/tag/release without explicit approval.
+- Launcher parity: same feature set as every port; change only the theme
+  (names, icons, strings, manifest labels). Add features to the shell.
 - Keep `STATE.md` updated with disc/build/runtime/performance/release.
 - After three failed variations, change approach or ask for the missing state/log.
 

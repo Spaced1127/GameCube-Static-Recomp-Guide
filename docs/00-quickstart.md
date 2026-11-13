@@ -163,10 +163,17 @@ Use [templates/recomplauncher.template.json](../templates/recomplauncher.templat
 and read [07-recomplauncher.md](07-recomplauncher.md). Validate it against the
 official schema before shipping.
 
+The manifest and the custom launcher are one product: same user dir, module and
+config paths, same feature set. The launcher is themed per title, never forked;
+see [15-launcher-parity.md](15-launcher-parity.md#the-launcher-parity-contract).
+
 ## 10. Icons and release
 
 - Embed multi-size `.ico` files in both executables with a Windows RC resource
   (see [08-icons-and-release.md](08-icons-and-release.md)).
+- Theme the shared launcher for this title: names, icons, accent, strings,
+  manifest labels. Run the parity table in
+  [15-launcher-parity.md](15-launcher-parity.md#the-launcher-parity-contract).
 - Package `Name-vX.Y.Z-Windows-x64.zip` with the manifest at the top.
 - Scan for game data.
 - Compute SHA-256, publish, download it back, verify the hash, schema,
@@ -180,5 +187,6 @@ official schema before shipping.
 - [ ] Target FPS holds (usually 59.94).
 - [ ] Settings/saves/logs work.
 - [ ] RecompLauncher manifest validates and setup reaches "Ready to play".
+- [ ] Launcher parity table passed; theme is this title only.
 - [ ] Release contains no game data.
 - [ ] User approved commit/publish.

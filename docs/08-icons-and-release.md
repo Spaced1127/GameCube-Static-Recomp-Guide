@@ -80,6 +80,23 @@ $icon.ToBitmap().Save("extracted.png", [System.Drawing.Imaging.ImageFormat]::Png
 Open `extracted.png` and confirm it is the intended art, not a blank/default
 icon. Do this for both executables and for the downloaded release asset.
 
+## Per-title theme
+
+Every release uses the shared launcher feature set with this title's theme.
+"Parity" means the same capabilities; the theme is what changes:
+
+- product and executable names;
+- launcher badge and runner cover icons;
+- accent colour, splash and about text;
+- window title, player-facing strings and manifest labels;
+- `PLAYERS.md`, README and release notes.
+
+Theme work is data and art. If a title needs a new capability, add it to the
+launcher shell and rebuild every title, not just this one. At release, audit
+the binaries, manifest, README and logs for another title's name, icon or disc
+ID. The full contract is in
+[15-launcher-parity.md](15-launcher-parity.md#the-launcher-parity-contract).
+
 ## Release package
 
 A stable packaging script should:
@@ -154,6 +171,9 @@ Document the replacement in the release notes if you reuse a tag.
 ## Release checklist
 
 - [ ] Build from documented commands.
+- [ ] Launcher built from the current shell; parity table in `docs/15` passed
+      on a fresh user dir.
+- [ ] Theme is this title only; both icons extract and labels match.
 - [ ] Launcher + runner icons embedded and verified.
 - [ ] Manifest at top level; schema 0 errors.
 - [ ] `prepare` headless progress works.

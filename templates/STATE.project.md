@@ -26,6 +26,9 @@
 - Graphics backend:
 - Audio backend:
 - Controller profile:
+- Launcher shell revision:
+- Theme (name/icons/manifest):
+- Parity audit date:
 
 ## Performance
 
@@ -45,4 +48,5 @@
 - Asset:
 - SHA-256:
 - RecompLauncher status:
+- Launcher parity / theme audit:
 - Known limitations:

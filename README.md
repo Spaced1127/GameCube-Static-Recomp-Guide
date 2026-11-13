@@ -36,6 +36,7 @@ legally dumped disc.
 | Stuck on a failure | [docs/09-troubleshooting.md](docs/09-troubleshooting.md) |
 | Working with the game's archives, textures, meshes or levels | [docs/12-asset-formats.md](docs/12-asset-formats.md) |
 | Shipping to a handheld, console or secondary target | [docs/13-other-targets.md](docs/13-other-targets.md) |
+| Keeping the launcher in parity across ports | [docs/15-launcher-parity.md](docs/15-launcher-parity.md) |
 | An AI agent picking up the work | [AGENTS.md](AGENTS.md), [docs/11-agent-playbook.md](docs/11-agent-playbook.md) |
 | Just need the commands | [docs/CHEATSHEET.md](docs/CHEATSHEET.md) |
 
@@ -80,6 +81,9 @@ legally dumped disc.
 - **A release must be built from the runner you tested.** A stale runner
   silently ignores new settings; prove the option reached the runtime from the
   `[video]` log line.
+- **One launcher feature set, one theme per title.** Every port ships the same
+  launcher capabilities; the title changes the name, icons, strings and
+  manifest labels, never the feature list.
 - **A 59.9 title is full speed.** The VI runs at 59.94 Hz; the target is 59.94,
     not 60.000.
 - **External load is real.** A local LLM, browser, or compositor using the GPU
@@ -115,6 +119,7 @@ docs/10-case-studies.md       five ports, with numbers and the bugs that mattere
 docs/11-agent-playbook.md     ordered playbook for an AI agent
 docs/12-asset-formats.md      archive/texture/mesh/level formats and validation
 docs/13-other-targets.md      handheld/console paths, honest port labelling
+docs/15-launcher-parity.md    launcher parity contract, per-title theme, audit
 docs/appendix/                raw SpongeBob performance/test/state notes
 docs/recomplauncher.schema.json  offline copy of the SDK schema
 templates/                    manifest, RC/icon, PGO, release, automation, AGENTS
