@@ -37,6 +37,7 @@ legally dumped disc.
 | Working with the game's archives, textures, meshes or levels | [docs/12-asset-formats.md](docs/12-asset-formats.md) |
 | Shipping to a handheld, console or secondary target | [docs/13-other-targets.md](docs/13-other-targets.md) |
 | Keeping the launcher in parity across ports | [docs/15-launcher-parity.md](docs/15-launcher-parity.md) |
+| Building/theming the launcher (implementation recipe + gotchas) | [docs/16-launcher-implementation.md](docs/16-launcher-implementation.md) |
 | An AI agent picking up the work | [AGENTS.md](AGENTS.md), [docs/11-agent-playbook.md](docs/11-agent-playbook.md) |
 | Just need the commands | [docs/CHEATSHEET.md](docs/CHEATSHEET.md) |
 
@@ -120,6 +121,7 @@ docs/11-agent-playbook.md     ordered playbook for an AI agent
 docs/12-asset-formats.md      archive/texture/mesh/level formats and validation
 docs/13-other-targets.md      handheld/console paths, honest port labelling
 docs/15-launcher-parity.md    launcher parity contract, per-title theme, audit
+docs/16-launcher-implementation.md  build the shell + theme it: architecture, tokens, gotchas
 docs/appendix/                raw SpongeBob performance/test/state notes
 docs/recomplauncher.schema.json  offline copy of the SDK schema
 templates/                    manifest, RC/icon, PGO, release, automation, AGENTS

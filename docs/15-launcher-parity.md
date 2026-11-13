@@ -9,6 +9,27 @@ identical pixels.
 A feature added for one title goes into the shell, so every later launcher
 build gets it. A title fork is a bug, not a shortcut.
 
+For the concrete build recipe (shell anatomy, theme tokens, and the gotchas
+that block agents), see [16 - Launcher implementation](16-launcher-implementation.md).
+
+## The structural contract (two executables)
+
+Parity starts with the *structure*, not the pixels. Every port ships exactly
+two player-facing executables: the launcher (`<Title>Recomp.exe`) and a single
+runner (`<Title>RecompRunner.exe`). The flow is **launcher -> Play -> runner**.
+
+- The runner selects the CPU core itself (`--core jit|static`). There is **no
+  runner shim and no separate "core" executable**.
+- There is **no `Play.cmd`** (or any batch shim); the launcher is the entry point.
+- RecompLauncher's `prepare` runs the launcher headless (`--extract`); there is
+  **no separate shipped `Prepare.exe`**.
+- The custom launcher and `recomplauncher.json` share one user dir, module name
+  and config path.
+
+A port that ships a shim/core pair, a `.cmd`, or a separate prepare exe is not
+at parity even if it looks finished. The full rationale and CMake wiring are in
+[16](16-launcher-implementation.md#1-the-two-executable-architecture-get-this-right-first).
+
 ## The launcher parity contract
 
 Every launcher, regardless of title, must provide:

@@ -62,7 +62,9 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - config path/keys
 - dumps/RVZ/check
 - no game data
-- launcher parity: shared shell, same features, per-title theme only
+- launcher parity: shared shell, same features, per-title theme only; two
+  executables (launcher + single runner, native `--core`), no shim/`Play.cmd`/
+  shipped prepare exe. Build recipe + gotchas: docs/16-launcher-implementation.md
 - manifest and custom launcher agree on user dir/module/config paths
 
 ### Secondary target

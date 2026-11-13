@@ -14,8 +14,9 @@ own `AGENTS.md`/`STATE.md` first if one exists.
    packaging
 6. `docs/12-asset-formats.md` if the task touches archives/textures/levels, or
    `docs/13-other-targets.md` for a non-Windows target
-7. `docs/15-launcher-parity.md` if adding a launcher feature or shipping a
-   release
+7. `docs/15-launcher-parity.md` (the contract) and
+   `docs/16-launcher-implementation.md` (the build recipe + gotchas) if adding a
+   launcher feature, building/theming a launcher, or shipping a release
 8. The target project's `STATE.md`, build scripts and latest logs
 
 ## Hard rules
@@ -25,8 +26,11 @@ own `AGENTS.md`/`STATE.md` first if one exists.
 - **No generated-code edits.** Fix the emitter/runtime and regenerate.
 - **Launcher parity, per-title theme.** Every port ships the shared launcher
   feature set; only names, icons, strings and manifest labels change. Add a
-  feature to the shell, never to one title's fork. See
-  [docs/15](docs/15-launcher-parity.md#the-launcher-parity-contract).
+  feature to the shell, never to one title's fork. Ship exactly two executables
+  (launcher + single runner with native `--core`); no shim, no `RunnerCore`, no
+  `Play.cmd`, no shipped `Prepare.exe`. See
+  [docs/15](docs/15-launcher-parity.md#the-launcher-parity-contract) and
+  [docs/16](docs/16-launcher-implementation.md).
 - **No clean builds** unless the user explicitly asks. DolRecomp/Dolphin
   builds and PGO data are expensive.
 - **No commit, tag, release or push** without explicit user approval. A request
