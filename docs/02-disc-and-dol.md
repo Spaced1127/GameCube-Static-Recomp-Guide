@@ -88,16 +88,20 @@ python tools/gcdisc.py dol work\disc\game.iso work\game
 ## RVZ / compressed images
 
 ```powershell
-python tools/rvz_extract.py work\disc\game.rvz work\disc\game.iso
+# Read the RVZ directly; no ISO is written
+python tools/gcdisc.py info work\disc\game.rvz
+python tools/gcdisc.py extract work\disc\game.rvz work\game
+python tools/verify_dol.py work\disc\game.rvz work\game\sys\main.dol
 ```
 
-`rvz_extract.py` implements the GameCube path of Dolphin's WIA/RVZ container
-(Zstandard, no compression, RVZ padding). It does not handle Wii partitions.
-After extraction, verify the ISO size/CRC against Redump, then run `gcdisc.py`.
+`gcdisc.py` uses `rvz_extract.py`'s `RvzReader`, which implements the GameCube
+path of Dolphin's WIA/RVZ container (Zstandard, no compression, RVZ padding)
+and decompresses groups on demand. It does not handle Wii partitions.
+`rvz_extract.py input.rvz output.iso` is only for another tool that requires
+a raw ISO.
 
-Dolphin's own **Convert File** dialog is the safest option for unusual RVZ
-features. RecompLauncher's `game.kind: "iso"` may reject RVZ; see
-[07-recomplauncher.md](07-recomplauncher.md).
+RecompLauncher accepts RVZ when `game.label` names `.rvz` and the manifest
+uses `check.ids` (see [07-recomplauncher.md](07-recomplauncher.md)).
 
 ## Verify the DOL
 

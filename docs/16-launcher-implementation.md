@@ -370,7 +370,8 @@ The shell uses a non-optional config API (`frontend_config.{hpp,cpp}`):
 string, `SaveConfig` round-trips. The launcher exposes a scriptable CLI that
 uses the *same* validating parser as the GUI:
 
-- `--extract <iso>` — headless extraction with `progress` lines (RecompLauncher).
+- `--extract <iso|rvz>` — headless extraction with `progress` lines
+  (RecompLauncher); RVZ is read natively by Dolphin DiscIO.
 - `--set key=value` — rewrite a config key, revalidate, save (no GUI needed).
 - `--play` — load the default game and start the runner immediately.
 
@@ -405,6 +406,21 @@ called on every non-netplay launch, and `GenerateControllerConfig`
   Xbox -> PS -> Switch cannot leave a stale `GCPadNew.ini`. `manual` preserves
   a profile chosen in the custom launcher. `xbox`, `playstation`, `switch` and
   `generic` force a layout while still following the connected device.
+- **GUID identity, not names.** Parse SDL's standard-form GUID and key the
+  table on VID/PID. DualSense Edge (`054c:0df2`) -> PlayStation; Xbox Elite
+  Series 1/2 (`045e:02e3`, `0b00`, `0b05`, `0b22`) -> Xbox. USB, Bluetooth and
+  XInput variants land on the same entry. Paddles and Fn/extra buttons are
+  deliberately unbound; standard face buttons and triggers are identical to
+  the standard pad.
+- **Live mapping for Nintendo-layout third parties.** Parse
+  `SDL_GetGamepadMappingForID` per pad. `a` index greater than `b` selects the
+  printed-label Switch layout (8BitDo Pro 2 Nintendo/Switch mode); Ultimate
+  and 64 report `a:b0,b:b1` and stay standard. A reversed `dpleft`/`dpright`
+  sets `dpad_swap` and writes corrected Left/Right bindings.
+- **Diagnostics.** One line per pad:
+  `controller: "<name>" guid=<32 hex> bus=<...> vid=<...> pid=<...>
+  layout=<...> source=<guid|mapping|type> dpad_swap=<yes|no>
+  face_swap=<yes|no> [paddles=unbound] [extras=unbound] [family="..."]`.
 - **Up to four ports.** Map connected pads to GCPad1..4 for local multiplayer.
 
 The runtime loads this file via `UICommon::SetUserDirectory(<user>)` +
@@ -450,7 +466,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 #   --core static -> [staticrecomp] module loaded, fallback=0, smc_failed=0
 
 # prove the launcher flow
-#   <Title>Recomp.exe --extract <iso>   (headless, progress 1.000)
+#   <Title>Recomp.exe --extract <iso|rvz>   (headless, progress 1.000)
 #   <Title>Recomp.exe --play            (spawns the runner; check the log)
 
 # package + verify (layout, icons, game-data scan, schema, staged prepare+run)
@@ -482,7 +498,8 @@ resize-safe backdrop.
 - [ ] Patch is UTF-8 and `git apply --reverse --check` passes (4.6).
 - [ ] Both cores verified; `[video]`/`[audio]` lines prove settings (4.9).
 - [ ] Controllers baked into the runner (6b): auto-detect and regenerate each
-      boot, Switch printed labels, verified with a real pad (fresh / swap /
+      boot, Switch printed labels, Edge/Elite GUIDs, paddles/Fn unbound,
+      verified with a real pad (fresh / swap /
       manual), works via RecompLauncher.
 - [ ] Theme audit: no other title's name, icon, disc ID or strings anywhere.
 - [ ] `LICENSES/` shipped; art source/license documented; game-data scan clean.

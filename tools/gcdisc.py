@@ -2,10 +2,14 @@
 """GameCube disc / DOL / FST inspection and extraction.
 
 Usage:
-    python tools/gcdisc.py info    <game.iso>
-    python tools/gcdisc.py list    <game.iso> [path-filter]
-    python tools/gcdisc.py extract <game.iso> <out-dir> [path-filter]
-    python tools/gcdisc.py dol     <game.iso> <out-dir>
+    python tools/gcdisc.py info    <game.iso|game.rvz>
+    python tools/gcdisc.py list    <game.iso|game.rvz> [path-filter]
+    python tools/gcdisc.py extract <game.iso|game.rvz> <out-dir> [path-filter]
+    python tools/gcdisc.py dol     <game.iso|game.rvz> <out-dir>
+
+ISO and RVZ are read directly. RVZ is detected by its RVZ\\x01 magic and
+decompressed on demand; no intermediate ISO is written. `extract` writes the
+same `sys/` + `files/` tree the launcher produces.
 
 The DOL is written section-by-section with a JSON manifest so it can be
 loaded into a disassembler at the original virtual addresses.
@@ -18,8 +22,16 @@ import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rvz_extract import disc_size, image_kind, open_disc
+
 GC_MAGIC = 0xC2339F3D
 DOL_HEADER_SIZE = 0x100
+DISC_HEADER_SIZE = 0x440
+BI2_OFFSET = 0x440
+BI2_SIZE = 0x2000
+APPLOADER_OFFSET = 0x2440
+SYSTEM_FILE_COUNT = 5
 
 
 @dataclass
@@ -85,7 +97,7 @@ def parse_dol(data: bytes, file_offset: int = 0) -> Dol:
 
 
 def read_dol(iso: Path) -> tuple[Dol, bytes]:
-    with iso.open("rb") as f:
+    with open_disc(iso) as f:
         f.seek(0x420)
         dol_offset = struct.unpack(">I", f.read(4))[0]
         f.seek(dol_offset)
@@ -107,7 +119,7 @@ def read_dol(iso: Path) -> tuple[Dol, bytes]:
 
 
 def parse_fst(iso: Path) -> tuple[list[FstEntry], int, int]:
-    with iso.open("rb") as f:
+    with open_disc(iso) as f:
         f.seek(0x424)
         fst_offset = struct.unpack(">I", f.read(4))[0]
         fst_size = struct.unpack(">I", f.read(4))[0]
@@ -187,7 +199,7 @@ def walk(entries: list[FstEntry], prefix: str = ""):
 
 
 def open_section(iso: Path, dol: Dol, section: DolSection) -> bytes:
-    with iso.open("rb") as f:
+    with open_disc(iso) as f:
         f.seek(0x420)
         dol_offset = struct.unpack(">I", f.read(4))[0]
         f.seek(dol_offset + section.file_offset)
@@ -195,9 +207,9 @@ def open_section(iso: Path, dol: Dol, section: DolSection) -> bytes:
 
 
 def cmd_info(iso: Path):
-    with iso.open("rb") as f:
-        hdr = f.read(0x440)
-        f.seek(0x440)
+    with open_disc(iso) as f:
+        hdr = f.read(DISC_HEADER_SIZE)
+        f.seek(BI2_OFFSET)
         bi2 = f.read(0x40)
     magic, = struct.unpack_from(">I", hdr, 0x1C)
     dol_off, fst_off, fst_size, fst_max = struct.unpack_from(">IIII", hdr, 0x420)
@@ -207,7 +219,8 @@ def cmd_info(iso: Path):
     files = list(walk(root))
 
     print(f"File:        {iso}")
-    print(f"Size:        {iso.stat().st_size:,} bytes")
+    print(f"Container:   {image_kind(iso)}")
+    print(f"Size:        {disc_size(iso):,} bytes")
     print(f"Game ID:     {hdr[0:6].decode('ascii', errors='replace')}")
     print(f"Title:       {title}")
     print(f"Magic:       {magic:#010x} {'(GameCube)' if magic == GC_MAGIC else '(unexpected)'}")
@@ -245,18 +258,47 @@ def cmd_list(iso: Path, filt: str | None):
             print(f"{'-':1} {e.size:12}  {path}")
 
 
+def write_system_files(f, iso: Path, out_dir: Path):
+    """Write the same sys/ files Dolphin's ExportSystemData produces."""
+    sys_dir = out_dir / "sys"
+    sys_dir.mkdir(parents=True, exist_ok=True)
+
+    def write_at(offset: int, size: int, name: str):
+        f.seek(offset)
+        data = f.read(size)
+        if len(data) != size:
+            raise ValueError(f"truncated system file {name}")
+        (sys_dir / name).write_bytes(data)
+
+    write_at(0, DISC_HEADER_SIZE, "boot.bin")
+    write_at(BI2_OFFSET, BI2_SIZE, "bi2.bin")
+
+    f.seek(APPLOADER_OFFSET + 0x14)
+    app_size, trailer_size = struct.unpack(">II", f.read(8))
+    write_at(APPLOADER_OFFSET, 0x20 + app_size + trailer_size, "apploader.img")
+
+    _dol, raw = read_dol(iso)
+    (sys_dir / "main.dol").write_bytes(raw)
+
+    f.seek(0x424)
+    fst_offset, fst_size = struct.unpack(">II", f.read(8))
+    write_at(fst_offset, fst_size, "fst.bin")
+
+
 def cmd_extract(iso: Path, out_dir: Path, filt: str | None):
     root, _, _ = parse_fst(iso)
+    files_dir = out_dir / "files"
     out_dir.mkdir(parents=True, exist_ok=True)
     count = 0
     total = 0
-    with iso.open("rb") as f:
+    with open_disc(iso) as f:
+        write_system_files(f, iso, out_dir)
         for path, e in walk(root):
             if e.is_dir:
                 continue
             if filt and filt.lower() not in path.lower():
                 continue
-            dest = out_dir / path
+            dest = files_dir / path
             dest.parent.mkdir(parents=True, exist_ok=True)
             f.seek(e.offset)
             data = f.read(e.size)
@@ -265,7 +307,8 @@ def cmd_extract(iso: Path, out_dir: Path, filt: str | None):
             dest.write_bytes(data)
             count += 1
             total += e.size
-    print(f"Extracted {count} files ({total:,} bytes) to {out_dir}")
+    print(f"Extracted {count} files ({total:,} bytes) plus "
+          f"{SYSTEM_FILE_COUNT} system files to {out_dir}")
 
 
 def cmd_dol(iso: Path, out_dir: Path):

@@ -5,7 +5,12 @@
   "repo": "Spaced1127/SpongeBobRecomp",
   "game": {
     "kind": "iso",
-    "label": "Your USA GameCube disc image (.iso) of SpongeBob SquarePants: Revenge of the Flying Dutchman (GSQE78).",
+    "label": "Your USA GameCube disc image (.iso or .rvz) of SpongeBob SquarePants: Revenge of the Flying Dutchman (GSQE78).",
+    "check": {
+      "ids": [
+        "GSQE78"
+      ]
+    },
     "dumps": [
       {
         "name": "USA",
@@ -87,7 +92,7 @@
     {
       "id": "controller",
       "label": "Controller",
-      "help": "Auto detects Xbox, PlayStation, Switch and generic pads. Switch uses the printed A/B/X/Y labels.",
+      "help": "Auto detects Xbox, PlayStation, Switch and generic pads, including DualSense Edge and Xbox Elite. Switch uses the printed A/B/X/Y labels.",
       "choices": [
         {
           "label": "Auto-detect",

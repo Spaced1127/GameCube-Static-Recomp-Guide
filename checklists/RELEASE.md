@@ -49,6 +49,10 @@
 ## Controller
 
 - [ ] Auto layout detects Xbox, PlayStation, Switch and generic pads.
+- [ ] DualSense Edge and Xbox Elite Series 1/2 GUIDs resolve to
+      PlayStation/Xbox layouts; paddles/Fn are unbound.
+- [ ] 8BitDo Pro 2 Nintendo/Switch mode uses printed labels; Ultimate/64 stay
+      standard; reversed D-pad is corrected.
 - [ ] Switch profile uses printed A/B/X/Y labels (A/B and X/Y swapped).
 - [ ] Changing controllers regenerates the device in `auto`; `manual` preserves.
 - [ ] RecompLauncher Controller layout setting writes `controller_profile`.

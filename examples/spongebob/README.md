@@ -20,6 +20,8 @@ What to notice:
 - The runner detects Xbox, PlayStation, Switch and generic SDL pads itself and
   writes the matching `GCPadNew.ini`; this works even when RecompLauncher starts
   the runner without the custom launcher. Switch uses printed A/B/X/Y labels.
+- Either `.iso` or `.rvz` is accepted directly; `game.label` names both and
+  `check.ids` reads `GSQE78` from the RVZ header. No conversion step.
 
 Performance notes:
 

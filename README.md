@@ -96,7 +96,11 @@ legally dumped disc.
     [docs/04](docs/04-runtime-and-launcher.md#fullscreen-and-shutdown-windows).
 - **Controller support belongs to the runner.** RecompLauncher starts the
     runner directly; detect Xbox/PlayStation/Switch/generic pads and write the
-    layout in the runner, not only in the custom launcher.
+    layout in the runner, not only in the custom launcher. Identify special
+    pads (DualSense Edge `054c:0df2`, Xbox Elite `045e:02e3/0b00/0b05/0b22`)
+    from the SDL GUID, not the product name; leave paddles/Fn unbound unless a
+    game has extra actions. For third-party Nintendo layouts, read the live SDL
+    `a`/`b` mapping (8BitDo Pro 2) instead of the name.
 - **Same tag, new asset is not an update.** If you replace a GitHub release
     without bumping the tag, existing RecompLauncher installs will not see it.
     Use a new version for real updates.

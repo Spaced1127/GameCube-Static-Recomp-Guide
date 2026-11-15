@@ -80,12 +80,13 @@ For ISO or extracted folder, Rocket Power's approach:
 "check": { "ids": ["GBQE78"], "file": "sys/main.dol" }
 ```
 
-The SpongeBob example uses `kind: "iso"`, no `check`, and Redump dumps; see
-[examples/spongebob/recomplauncher.json](../examples/spongebob/recomplauncher.json).
+The SpongeBob example uses `kind: "iso"`, `check.ids ["GSQE78"]`, and Redump
+dumps; see [examples/spongebob/recomplauncher.json](../examples/spongebob/recomplauncher.json).
 
-RVZ: the custom launcher may support it, but RecompLauncher's `iso` kind may
-reject a compressed RVZ. Either convert to ISO or document the limitation.
-The SpongeBob manifest advertises ISO only.
+RVZ: `kind: "iso"` accepts a compressed `.rvz` only when the label names
+`.rvz` (or `rvz `). RecompLauncher then reads the disc ID from the RVZ header at
+0x58. Do not tell players to convert. Keep `dumps` for the ISO verified badge;
+an RVZ still works without the CRC match because `check.ids` validates it.
 
 ## `prepare`
 
@@ -313,8 +314,9 @@ reproduce.
 
 ## Common RecompLauncher pitfalls
 
-- `check` missing for GameCube -> player must pick the ISO; that is expected.
-- RVZ rejected by `kind: iso` -> convert to ISO.
+- `check` missing for GameCube -> player must pick the ISO/RVZ; that is expected.
+- RVZ rejected by `kind: iso` -> put `.rvz` in `game.label` and use
+  `check.ids` for the GameCube disc ID. No conversion.
 - Manifest at the top level only; a nested copy is ignored.
 - A stale release cache -> Check Now.
 - A same-tag asset replacement -> no update; use a new version.

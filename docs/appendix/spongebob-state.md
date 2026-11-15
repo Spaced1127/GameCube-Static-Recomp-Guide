@@ -169,16 +169,14 @@ Build tree: `build/moderngekko` (CMake + Ninja + MSVC).
 ## Commands
 
 ```powershell
-# Extract the RVZ
-python tools\rvz_extract.py "<disc>.rvz" work\disc\game.iso
-
-# Inventory
-python tools\gcdisc.py info  work\disc\game.iso
-python tools\gcdisc.py list  work\disc\game.iso
-python tools\gcdisc.py dol   work\disc\game.iso work\disc\dol
+# Inventory and extract directly from ISO or RVZ (no conversion)
+python tools\gcdisc.py info    "<disc>.rvz"
+python tools\gcdisc.py list    "<disc>.rvz"
+python tools\gcdisc.py extract "<disc>.rvz" work\game
+python tools\gcdisc.py dol     "<disc>.rvz" work\disc\dol
 
 # Disassemble the entry point
-python tools\dol_disasm.py work\disc\main.dol 0x80003140 0x80003300
+python tools\dol_disasm.py work\game\sys\main.dol 0x80003140 0x80003300
 
 # Recompile only (already done once)
 build\dolrecomp\dolrecomp.exe --gamecube work\disc\main.dol build\recomp

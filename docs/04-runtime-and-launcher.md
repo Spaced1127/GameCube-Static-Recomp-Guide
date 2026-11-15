@@ -197,6 +197,18 @@ detection and layout.
 - Layouts: Xbox, PlayStation and generic use physical positions
   (`Button A/B/X/Y`). Switch uses printed labels, which swaps A/B and X/Y:
   `Buttons/A = Button B`, `B = Button A`, `X = Button Y`, `Y = Button X`.
+- Detect by SDL's standard-form GUID (VID/PID), not the product name:
+  DualSense Edge (`054c:0df2`) and Xbox Elite Series 1/2
+  (`045e:02e3`, `0b00`, `0b05`, `0b22`). Edge uses the PlayStation layout;
+  Elite uses Xbox. Paddles and Fn/extra buttons are intentionally unbound.
+- Parse the live SDL mapping per pad (`SDL_GetGamepadMappingForID`). If the
+  `a` button index is greater than `b`, use the printed-label Switch layout
+  (8BitDo Pro 2 in Nintendo/Switch mode). Ultimate and 64 report `a<b` and
+  stay standard. If `dpleft` is greater than `dpright` (or the hat/axis form is
+  reversed), swap the generated Left/Right bindings.
+- Log one line per pad with name, 32-character GUID, bus, VID/PID, layout,
+  detection source, `dpad_swap`, `face_swap` and paddle/Fn status. Keep the
+  SDL type only as a fallback for pads outside the GUID table.
 - `controller_profile=auto` regenerates the profile each launch so a stale
   device or positional layout cannot survive a controller change. `manual`
   preserves a selection made in the custom launcher;

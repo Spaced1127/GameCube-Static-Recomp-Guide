@@ -3,11 +3,12 @@
 ## Disc / DOL
 
 ```powershell
-python tools/gcdisc.py info work\disc\game.iso
+python tools/gcdisc.py info work\disc\game.iso       # or game.rvz
 python tools/gcdisc.py extract work\disc\game.iso work\game
 python tools/gcdisc.py dol work\disc\game.iso work\game
 python tools/verify_dol.py work\disc\game.iso work\game\sys\main.dol
-python tools/rvz_extract.py work\disc\game.rvz work\disc\game.iso
+# optional when another tool needs a raw ISO:
+# python tools/rvz_extract.py work\disc\game.rvz work\disc\game.iso
 python tools/dol_disasm.py work\disc\main.dol 0x80003140 0x80003200
 ```
 

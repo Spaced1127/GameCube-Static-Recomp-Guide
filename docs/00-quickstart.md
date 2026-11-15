@@ -48,13 +48,9 @@ Record:
 - Redump size and CRC-32
 - region and revision
 
-If the dump is RVZ:
-
-```powershell
-python tools\rvz_extract.py work\disc\game.rvz work\disc\game.iso
-```
-
-Then re-run the commands above. See [02-disc-and-dol.md](02-disc-and-dol.md).
+The same commands take a Dolphin `.rvz` directly; `gcdisc.py` detects it by
+magic and reads the compressed groups natively. No ISO conversion is needed.
+See [02-disc-and-dol.md](02-disc-and-dol.md).
 
 ## 3. Generate the static C module
 

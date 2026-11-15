@@ -97,6 +97,10 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - Detect the first SDL gamepad, read `SDL_GetGamepadTypeForID`, and write
   `GCPadNew.ini`. Switch uses printed A/B/X/Y labels; Xbox/PlayStation/generic
   use positions.
+- Read the live mapping with `SDL_GetGamepadMappingForID`. `a` index greater
+  than `b` means a Nintendo-layout third party (8BitDo Pro 2) -> printed-label
+  Switch layout; Ultimate/64 report `a:b0,b:b1` and stay standard. Reversed
+  `dpleft`/`dpright` -> swap generated Left/Right.
 - `controller_profile=auto` regenerates each launch; `manual` preserves a
   custom launcher selection; concrete values force a layout.
 - Enumerate with `SDL_INIT_GAMEPAD|SDL_INIT_JOYSTICK`, not SDL video.

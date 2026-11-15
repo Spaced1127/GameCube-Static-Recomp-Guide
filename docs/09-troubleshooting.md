@@ -32,6 +32,8 @@
 | no controller | no GCPadNew.ini | auto-detect first SDL gamepad; generate the profile |
 | controller profile loads but nothing responds; game never leaves the title | wrong device string (`Source/Id/Name`) or a game with no in-game input menu | verify at the guest pad register; write the profile the game expects |
 | Switch pad has A/B or X/Y swapped | profile is positional, or a third-party Switch adapter reports as Xbox/Standard | set `controller_profile=switch`; auto detects Nintendo types but adapters may need the override |
+| DualSense Edge or Xbox Elite paddles/Fn do nothing | they are deliberately unbound; the game has no extra actions | use the face buttons/triggers; send the startup `controller:` line if standard buttons are wrong |
+| 8BitDo Pro 2 A/B or X/Y swapped | live SDL mapping not read, or firmware reports a non-Nintendo mapping | check `controller:` has `source=mapping` and `layout=switch`; 8BitDo Ultimate/64 intentionally stay standard |
 | controller works in the custom launcher but not RecompLauncher | runner has no device picker; a stale `GCPadNew.ini` is being reused | auto mode regenerates each launch; connect the pad before launch and keep `controller_profile=auto` |
 | changing controllers still uses the old device | stale device line in `GCPadNew.ini` | auto regenerates; `manual` intentionally preserves a custom-launcher selection |
 | audio crackle/dropouts | DSP/HLE or CPU underrun | use correct DSP LLE/HLE, Cubeb, check CPU load; test `--audio Null` |
@@ -92,8 +94,8 @@
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| "That Copy Didn't Work" | compressed RVZ picked with `kind: iso` | convert to ISO |
-| no ISO found automatically | no GameCube `check` exists | player picks the file; label must say ISO/region |
+| "That Copy Didn't Work" | compressed RVZ picked with `kind: iso` | label must name `.rvz`; add `check.ids` for the GameCube ID; no conversion |
+| no ISO found automatically | no GameCube `check` exists | player picks the file; label must say ISO/RVZ and region |
 | setup fails | extractor non-zero, bad disc/DOL, path | run `--extract` manually, read the exit code/progress |
 | verified badge missing | size/CRC mismatch | use a clean Redump dump |
 | settings don't apply | wrong config path/section | inspect the file after changing; check `[video]` log |

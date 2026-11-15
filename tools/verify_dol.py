@@ -6,7 +6,9 @@ executable/module is not a GameCube DOL, so "bit-identical rebuilt DOL" can
 only be asserted for the preserved input, not for the native artifact.
 
 Usage:
-    python tools/verify_dol.py <game.iso> <main.dol> [more.dol ...]
+    python tools/verify_dol.py <game.iso|game.rvz> <main.dol> [more.dol ...]
+
+RVZ is detected by magic and read natively; no conversion step is needed.
 """
 from __future__ import annotations
 
@@ -14,6 +16,9 @@ import hashlib
 import struct
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rvz_extract import open_disc
 
 
 def sha256(data: bytes) -> str:
@@ -35,7 +40,7 @@ def first_diff(a: bytes, b: bytes) -> int | None:
 
 
 def extract_dol(iso: Path) -> bytes:
-    with iso.open("rb") as f:
+    with open_disc(iso) as f:
         f.seek(0x420)
         dol_off = struct.unpack(">I", f.read(4))[0]
         f.seek(dol_off)

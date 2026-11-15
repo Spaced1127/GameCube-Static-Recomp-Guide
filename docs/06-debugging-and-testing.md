@@ -179,7 +179,7 @@ Do not silence SMC verification to make the log look clean.
 | `Failed to initialize DSP emulation!` | `Sys/GC/dsp_rom.bin` / `dsp_coef.bin` missing next to the runner | ship both files with the release |
 | controller missing | no GCPadNew.ini | auto-detect first SDL gamepad or generate the profile |
 | controller profile loads but no input | wrong device string (`Source/Id/Name`), or D-pad is not movement | verify at the guest pad register, not the file; remap per game |
-| RecompLauncher sees no ISO | `kind: iso` and RVZ picked | convert to ISO |
+| RecompLauncher sees no ISO | `kind: iso` and RVZ picked | label must name `.rvz`; use `check.ids`; no conversion |
 | RecompLauncher stale releases | 6-hour release cache | Settings -> Check Now / restart |
 
 ### Non-ASCII paths
@@ -239,11 +239,15 @@ Minimum before shipping:
 - [ ] no hidden `#32770` "Warning" dialog or modal panic
 - [ ] controller (real pad)
 - [ ] controller auto layout: Xbox/PlayStation/generic positional, Switch labels
+- [ ] DualSense Edge and Xbox Elite Series 1/2 GUIDs resolve correctly;
+      paddles/Fn stay unbound
+- [ ] 8BitDo Pro 2 Nintendo/Switch mode detects from live a/b; Ultimate/64
+      stay standard; reversed D-pad corrected
 - [ ] Switch profile swaps A/B and X/Y in `GCPadNew.ini`
 - [ ] changing controllers: `auto` regenerates the device; `manual` preserves
 - [ ] RecompLauncher Controller layout setting writes `controller_profile`
 - [ ] one graphics settings change, confirm `[video]` log
-- [ ] RecompLauncher setup from ISO, verified badge, settings, Play
+- [ ] RecompLauncher setup from ISO or RVZ, verified badge, settings, Play
 - [ ] update from previous release (if applicable)
 - [ ] clean install in a new folder
 - [ ] release asset download-back check

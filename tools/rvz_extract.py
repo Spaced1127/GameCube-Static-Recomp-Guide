@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Minimal RVZ (Dolphin compressed disc image) extractor.
+"""Native RVZ (Dolphin compressed disc image) reader and ISO exporter.
 
 Implements the WIA-derived RVZ container documented in Dolphin's
 docs/WiaAndRvz.md and the GameCube raw-data path used by WIABlob.cpp.
 Only the compression modes needed for this project are implemented:
 Zstandard, None, and RVZ padding packing. Wii partition data is not
 supported (this is a GameCube disc).
+
+The reader exposes a random-access ISO byte view, so tools can inspect or
+extract files without writing a 1.4 GB intermediate image.
 
 Usage:
     python tools/rvz_extract.py input.rvz output.iso
@@ -14,6 +17,7 @@ from __future__ import annotations
 
 import struct
 import sys
+from collections import OrderedDict
 from pathlib import Path
 
 import zstandard
@@ -135,18 +139,40 @@ def read_compressed_table(f, offset: int, size: int, compression: int, expect: i
     return data
 
 
-def extract(rvz_path: Path, iso_path: Path):
-    with rvz_path.open("rb") as f:
+class RvzReader:
+    """Random-access ISO byte view of a Dolphin RVZ image.
+
+    Group data is decompressed on first use and a small LRU cache keeps
+    recently read groups. The file object can be used with seek/read/tell.
+    """
+
+    CACHE_GROUPS = 96
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        self._file = self.path.open("rb")
+        self._cache: OrderedDict[tuple[int, int], bytes] = OrderedDict()
+        self._pos = 0
+        try:
+            self._read_header()
+        except Exception:
+            self._file.close()
+            raise
+
+    def _read_header(self):
+        f = self._file
         head = f.read(0x48)
         if len(head) != 0x48 or head[:4] != RVZ_MAGIC:
             raise ValueError("not an RVZ file")
-        version, compat, header2_size = struct.unpack_from(">III", head, 4)
+        version, _compat, header2_size = struct.unpack_from(">III", head, 4)
         iso_size, file_size = struct.unpack_from(">QQ", head, 0x24)
-        if rvz_path.stat().st_size != file_size:
+        if self.path.stat().st_size != file_size:
             raise ValueError("RVZ file size does not match header")
 
         h2 = f.read(header2_size)
-        disc_type, compression, compr_level, chunk_size = struct.unpack_from(">IIII", h2, 0)
+        if len(h2) != header2_size:
+            raise ValueError("RVZ header2 truncated")
+        disc_type, compression, _compr_level, chunk_size = struct.unpack_from(">IIII", h2, 0)
         if disc_type != 1:
             raise NotImplementedError(f"disc_type {disc_type} is not GameCube")
         if compression not in (COMPRESSION_NONE, COMPRESSION_ZSTD):
@@ -154,11 +180,15 @@ def extract(rvz_path: Path, iso_path: Path):
         if chunk_size % BLOCK_SIZE != 0:
             raise ValueError("invalid chunk size")
 
-        disc_header = h2[0x10:0x10 + DISC_HEADER_SIZE]
+        self.version = version
+        self.iso_size = iso_size
+        self.chunk_size = chunk_size
+        self.disc_header = h2[0x10:0x10 + DISC_HEADER_SIZE]
+
         p = 0x10 + DISC_HEADER_SIZE
-        n_part, part_t_size = struct.unpack_from(">II", h2, p)
+        n_part, _part_t_size = struct.unpack_from(">II", h2, p)
         p += 8
-        part_off, = struct.unpack_from(">Q", h2, p)
+        _part_off, = struct.unpack_from(">Q", h2, p)
         p += 8 + 20
         n_raw, = struct.unpack_from(">I", h2, p)
         p += 4
@@ -176,77 +206,190 @@ def extract(rvz_path: Path, iso_path: Path):
             raise NotImplementedError("Wii partition entries are not supported")
 
         raw_table = read_compressed_table(f, raw_off, raw_size, compression, n_raw * 24)
-        entries = []
+        self._entries = []
         for i in range(n_raw):
-            data_off, data_size, group_index, groups = struct.unpack_from(">QQII", raw_table, i * 24)
-            entries.append((data_off, data_size, group_index, groups))
+            data_off, data_size, group_index, groups = struct.unpack_from(
+                ">QQII", raw_table, i * 24
+            )
+            self._entries.append((data_off, data_size, group_index, groups))
 
         group_table = read_compressed_table(f, group_off, group_size, compression, n_groups * 12)
+        self._groups = [
+            struct.unpack_from(">III", group_table, i * 12) for i in range(n_groups)
+        ]
+        self.n_groups = n_groups
 
-        print(f"RVZ v{version >> 24}.{version >> 16 & 0xff:02x}.{version >> 8 & 0xff:02x}")
-        print(f"ISO size: {iso_size:,} bytes, chunk: {chunk_size:,}, groups: {n_groups:,}")
+        # Entry data starts at data_off but Dolphin aligns the read down to a
+        # 32 KiB sector and includes the skipped bytes in the group data.
+        self._segments = []
+        for entry_index, (data_off, data_size, group_index, groups) in enumerate(self._entries):
+            skipped = data_off % BLOCK_SIZE
+            aligned_off = data_off - skipped
+            aligned_size = data_size + skipped
+            for i in range(groups):
+                this_chunk = min(chunk_size, aligned_size - i * chunk_size)
+                if this_chunk <= 0:
+                    break
+                self._segments.append(
+                    (
+                        aligned_off + i * chunk_size,
+                        aligned_off + i * chunk_size + this_chunk,
+                        entry_index,
+                        i,
+                        aligned_size,
+                        group_index + i,
+                    )
+                )
+        if not self._segments:
+            raise ValueError("RVZ has no raw data groups")
+
+    def _get_group(self, group_in_entry: int, total_group: int, aligned_size: int) -> bytes:
+        this_chunk = min(self.chunk_size, aligned_size - group_in_entry * self.chunk_size)
+        key = (total_group, this_chunk)
+        cached = self._cache.get(key)
+        if cached is not None:
+            self._cache.move_to_end(key)
+            return cached
+
+        file_off4, group_data_size, packed_size = self._groups[total_group]
+        compressed = bool(group_data_size & 0x80000000)
+        group_data_size &= 0x7FFFFFFF
+        if group_data_size == 0:
+            chunk = bytes(this_chunk)
+        else:
+            self._file.seek(file_off4 * 4)
+            raw = self._file.read(group_data_size)
+            if len(raw) != group_data_size:
+                raise ValueError(f"RVZ group {total_group} truncated")
+            if compressed:
+                dec = zstandard.ZstdDecompressor()
+                if packed_size:
+                    packed = dec.decompress(raw, max_output_size=packed_size)
+                    if len(packed) != packed_size:
+                        raise ValueError("packed group size mismatch")
+                    chunk = unpack_rvz(packed, this_chunk, group_in_entry * self.chunk_size)
+                else:
+                    chunk = dec.decompress(raw, max_output_size=this_chunk)
+            else:
+                chunk = raw
+                if packed_size:
+                    chunk = unpack_rvz(chunk, this_chunk, group_in_entry * self.chunk_size)
+            if len(chunk) != this_chunk:
+                raise ValueError(
+                    f"RVZ group {total_group}: got {len(chunk)} bytes, expected {this_chunk}"
+                )
+
+        self._cache[key] = chunk
+        if len(self._cache) > self.CACHE_GROUPS:
+            self._cache.popitem(last=False)
+        return chunk
+
+    def read_at(self, offset: int, size: int) -> bytes:
+        if offset < 0 or size < 0:
+            raise ValueError("negative read")
+        if offset >= self.iso_size or size == 0:
+            return b""
+        size = min(size, self.iso_size - offset)
+        out = bytearray(size)
+        end = offset + size
+
+        # The extractor writes the disc header first, then group data on top.
+        # Mirror that so a malformed/absent first group still yields the header.
+        if offset < DISC_HEADER_SIZE:
+            n = min(DISC_HEADER_SIZE - offset, size)
+            out[:n] = self.disc_header[offset:offset + n]
+
+        for seg_start, seg_end, _entry_index, group_in_entry, aligned_size, total_group in self._segments:
+            if seg_end <= offset or seg_start >= end:
+                continue
+            copy_start = max(seg_start, offset)
+            copy_end = min(seg_end, end)
+            chunk = self._get_group(group_in_entry, total_group, aligned_size)
+            chunk_start = copy_start - seg_start
+            out[copy_start - offset:copy_end - offset] = chunk[
+                chunk_start:chunk_start + (copy_end - copy_start)
+            ]
+        return bytes(out)
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        if whence == 0:
+            self._pos = offset
+        elif whence == 1:
+            self._pos += offset
+        elif whence == 2:
+            self._pos = self.iso_size + offset
+        else:
+            raise ValueError("invalid whence")
+        return self._pos
+
+    def tell(self) -> int:
+        return self._pos
+
+    def read(self, size: int = -1) -> bytes:
+        if size is None or size < 0:
+            size = self.iso_size - self._pos
+        data = self.read_at(self._pos, size)
+        self._pos += len(data)
+        return data
+
+    def close(self):
+        self._file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
+
+
+def open_disc(path: Path):
+    """Open an ISO or RVZ image as a seekable binary stream.
+
+    RVZ is detected by magic, not by the filename extension.
+    """
+    path = Path(path)
+    with path.open("rb") as probe:
+        magic = probe.read(4)
+    if magic == RVZ_MAGIC:
+        return RvzReader(path)
+    return path.open("rb")
+
+
+def disc_size(path: Path) -> int:
+    """Uncompressed disc size for an ISO or RVZ image."""
+    path = Path(path)
+    with path.open("rb") as probe:
+        magic = probe.read(4)
+    if magic == RVZ_MAGIC:
+        with RvzReader(path) as reader:
+            return reader.iso_size
+    return path.stat().st_size
+
+
+def image_kind(path: Path) -> str:
+    path = Path(path)
+    with path.open("rb") as probe:
+        return "RVZ" if probe.read(4) == RVZ_MAGIC else "ISO"
+
+
+def extract(rvz_path: Path, iso_path: Path):
+    with RvzReader(rvz_path) as reader:
+        print(f"RVZ v{reader.version >> 24}.{reader.version >> 16 & 0xff:02x}.{reader.version >> 8 & 0xff:02x}")
+        print(f"ISO size: {reader.iso_size:,} bytes, chunk: {reader.chunk_size:,}, groups: {reader.n_groups:,}")
+        total_groups = (reader.iso_size + reader.chunk_size - 1) // reader.chunk_size
 
         with iso_path.open("wb") as out:
-            out.truncate(iso_size)
-            out.seek(0)
-            out.write(disc_header)
-
-            for entry_index, (data_off, data_size, group_index, groups) in enumerate(entries):
-                # Mirrors ReadFromGroups: the entry is aligned down to a 32 KiB
-                # sector and the skipped bytes are included in the data size.
-                skipped = data_off % BLOCK_SIZE
-                aligned_off = data_off - skipped
-                aligned_size = data_size + skipped
-
-                for i in range(groups):
-                    total_group = group_index + i
-                    file_off4, group_data_size, packed_size = struct.unpack_from(
-                        ">III", group_table, total_group * 12
-                    )
-                    compressed = bool(group_data_size & 0x80000000)
-                    group_data_size &= 0x7FFFFFFF
-
-                    this_chunk = min(chunk_size, aligned_size - i * chunk_size)
-                    if this_chunk <= 0:
-                        break
-
-                    if group_data_size == 0:
-                        chunk = bytes(this_chunk)
-                    else:
-                        f.seek(file_off4 * 4)
-                        raw = f.read(group_data_size)
-                        if len(raw) != group_data_size:
-                            raise ValueError("group data truncated")
-                        if compressed:
-                            dec = zstandard.ZstdDecompressor()
-                            if packed_size:
-                                packed = dec.decompress(raw, max_output_size=packed_size)
-                                if len(packed) != packed_size:
-                                    raise ValueError("packed group size mismatch")
-                                chunk = unpack_rvz(packed, this_chunk, i * chunk_size)
-                            else:
-                                chunk = dec.decompress(raw, max_output_size=this_chunk)
-                                if len(chunk) != this_chunk:
-                                    raise ValueError(
-                                        f"group {total_group}: got {len(chunk)} bytes, expected {this_chunk}"
-                                    )
-                        else:
-                            chunk = raw
-                            if packed_size:
-                                chunk = unpack_rvz(chunk, this_chunk, i * chunk_size)
-                            if len(chunk) != this_chunk:
-                                raise ValueError("uncompressed group size mismatch")
-
-                    # Group 0 covers disc offset 0 even though the raw entry
-                    # starts at 0x80; the header was written above.
-                    out.seek(aligned_off + i * chunk_size)
-                    out.write(chunk)
-
-                    if (i + 1) % 256 == 0 or i + 1 == groups:
-                        done = aligned_off + (i + 1) * chunk_size
-                        pct = min(100, done * 100 // iso_size)
-                        print(f"\r  groups {i + 1:,}/{groups:,}  {pct:3d}%", end="", flush=True)
-                print()
+            out.truncate(reader.iso_size)
+            for index, offset in enumerate(range(0, reader.iso_size, reader.chunk_size), 1):
+                chunk = reader.read_at(offset, min(reader.chunk_size, reader.iso_size - offset))
+                out.seek(offset)
+                out.write(chunk)
+                if index % 256 == 0 or offset + len(chunk) == reader.iso_size:
+                    done = offset + len(chunk)
+                    pct = min(100, done * 100 // reader.iso_size)
+                    print(f"\r  groups {index:,}/{total_groups:,}  {pct:3d}%", end="", flush=True)
+        print()
 
     print(f"Wrote {iso_path} ({iso_path.stat().st_size:,} bytes)")
 

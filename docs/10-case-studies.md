@@ -95,6 +95,9 @@ Entry point:  0x80003140
 - Keep the static module as a selectable artifact and document the difference.
 - If RecompLauncher can start the game without the custom launcher, controller
   detection and layout must live in the runner too.
+- 8BitDo Nintendo-layout pads need the live SDL `a`/`b` mapping; name-only
+  detection leaves A/B and X/Y reversed. Ultimate/64 report `a:b0,b:b1` and
+  must stay standard.
 
 ## Rocket Power: Beach Bandits (GBQE78)
 
