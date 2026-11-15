@@ -127,12 +127,18 @@ emulation_speed=1
 cpu_core=jit               # jit | static
 
 [Input]
-controller1=SDL/0/DualSense Wireless Controller
+controller=SDL/0/DualSense Wireless Controller
+controller_profile=auto    # auto | manual | xbox | playstation | switch | generic
 ```
 
 The game's parser ignores section headers, so the keys work globally. Keep
 sections for readability. The launcher's `SaveConfig` writes `cpu_core` and
 `emulation_speed=1.0`.
+
+`controller_profile=auto` makes the runner detect the connected SDL pad and
+rewrite `Config/GCPadNew.ini` each launch; `manual` keeps a profile chosen in
+the custom launcher. RecompLauncher never opens that launcher, so its manifest
+must write `controller_profile=auto` (or a forced layout) into `config.new`.
 
 ## CPU core selection details
 

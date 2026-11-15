@@ -90,6 +90,20 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - Repro: fullscreen close, F11 leave/re-enter then close, close after a save,
   windowed close, double-close.
 
+### Controller input
+
+- RecompLauncher starts the runner directly; do not rely on the custom
+  launcher's controller page.
+- Detect the first SDL gamepad, read `SDL_GetGamepadTypeForID`, and write
+  `GCPadNew.ini`. Switch uses printed A/B/X/Y labels; Xbox/PlayStation/generic
+  use positions.
+- `controller_profile=auto` regenerates each launch; `manual` preserves a
+  custom launcher selection; concrete values force a layout.
+- Enumerate with `SDL_INIT_GAMEPAD|SDL_INIT_JOYSTICK`, not SDL video.
+- Expose `controller_profile` in the RecompLauncher settings.
+- Test auto, Switch, stale-profile and manual; then a fresh RecompLauncher
+  install with no custom launcher.
+
 ## Phase 4 - Change one thing
 
 - Keep the diff small and explain the expected effect.
@@ -105,6 +119,7 @@ GameCube static recomp. Follow it in order; do not skip the baseline.
 - Target FPS/metadata met.
 - Fullscreen ALT+F4, F11 toggle, windowed close and close-after-save exit
   cleanly; no crash dump or hidden dialog.
+- Controller auto/explicit layouts and a fresh RecompLauncher install verified.
 - RecompLauncher setup/settings/Play verified if packaging.
 - Release downloaded back and checked if publishing.
 

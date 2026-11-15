@@ -13,8 +13,13 @@ What to notice:
 - `prepare` runs `--extract {game}` and prints `progress` lines.
 - `start` runs the runner with `--module`, `--user-dir` and the setting's
   `--core static` when the player selects the static core.
-- `config.new` writes `cpu_core=jit`; `always` keeps `emulation_speed=1`.
-- 13 settings, including CPU core, graphics, audio and saves/logs paths.
+- `config.new` writes `cpu_core=jit` and `controller_profile=auto`;
+  `always` keeps `emulation_speed=1`.
+- 14 settings, including CPU core, Controller layout, graphics, audio and
+  saves/logs paths.
+- The runner detects Xbox, PlayStation, Switch and generic SDL pads itself and
+  writes the matching `GCPadNew.ini`; this works even when RecompLauncher starts
+  the runner without the custom launcher. Switch uses printed A/B/X/Y labels.
 
 Performance notes:
 

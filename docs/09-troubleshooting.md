@@ -31,6 +31,9 @@
 | black legal/title/menu | EFB access off | `efb_access=true` |
 | no controller | no GCPadNew.ini | auto-detect first SDL gamepad; generate the profile |
 | controller profile loads but nothing responds; game never leaves the title | wrong device string (`Source/Id/Name`) or a game with no in-game input menu | verify at the guest pad register; write the profile the game expects |
+| Switch pad has A/B or X/Y swapped | profile is positional, or a third-party Switch adapter reports as Xbox/Standard | set `controller_profile=switch`; auto detects Nintendo types but adapters may need the override |
+| controller works in the custom launcher but not RecompLauncher | runner has no device picker; a stale `GCPadNew.ini` is being reused | auto mode regenerates each launch; connect the pad before launch and keep `controller_profile=auto` |
+| changing controllers still uses the old device | stale device line in `GCPadNew.ini` | auto regenerates; `manual` intentionally preserves a custom-launcher selection |
 | audio crackle/dropouts | DSP/HLE or CPU underrun | use correct DSP LLE/HLE, Cubeb, check CPU load; test `--audio Null` |
 | `Failed to initialize DSP emulation!` | `Sys/GC/dsp_rom.bin` / `dsp_coef.bin` missing next to the runner | ship both files; DSP LLE cannot start without them |
 | total silence, but the game runs | wrong DSP mode, or the app is muted in the Windows volume mixer | check the per-app mixer first; then LLE/HLE; then the in-game sound menu |
@@ -48,6 +51,7 @@
 | Close still hangs after the swap-chain guards; process alive, no crash dump | CPU thread in the presenter's frame-pacing sleep while `CPUManager::Stop()` waits for `PowerDown` | skip `CoreTiming::SleepUntil()` when `Core::IsRunning()` is false; add an 8 s shutdown watchdog |
 | Hidden `#32770` "Warning: Failed to re-configure swap chain images" | `PanicAlertFmt` in `SwapChain::ResizeSwapChain`/`RecreateSwapChain` | log and return `false`; caller skips the frame; no modal panic during resize/close |
 | F11 leaves fullscreen at the wrong size; close restores the wrong rect | fullscreen applied before the windowed rect/style was captured | capture the windowed style/rect before entering; set both the platform and `m_window_fullscreen` flags |
+| fullscreen style is applied but the window stays offset from the monitor origin | fullscreen applied on the first main-loop iteration before the window manager placed the window, or SDL video initialized early | wait about one second after the main loop, then `SetWindowPos` to the monitor; enumerate pads with `SDL_INIT_GAMEPAD|SDL_INIT_JOYSTICK`, not SDL video |
 | Exclusive fullscreen leaves the desktop mode changed after a crash | display mode restored in the renderer destructor after the process died | restore from the launcher/helper after the process exits; use borderless by default |
 | WndProc touches config while the window is destroyed | focus/size messages after `Core::Shutdown` destroyed the Config layers | return early when the platform pointer is gone; guard handlers with `IsRunning()` |
 

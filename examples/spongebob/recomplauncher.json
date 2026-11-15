@@ -62,7 +62,8 @@
         "mute": "false",
         "volume": "100",
         "emulation_speed": "1",
-        "cpu_core": "jit"
+        "cpu_core": "jit",
+        "controller_profile": "auto"
       }
     }
   ],
@@ -82,6 +83,46 @@
           "args": ["--core", "static"]
         }
       ]
+    },
+    {
+      "id": "controller",
+      "label": "Controller",
+      "help": "Auto detects Xbox, PlayStation, Switch and generic pads. Switch uses the printed A/B/X/Y labels.",
+      "choices": [
+        {
+          "label": "Auto-detect",
+          "set": {
+            "controller_profile": "auto"
+          }
+        },
+        {
+          "label": "Xbox",
+          "set": {
+            "controller_profile": "xbox"
+          }
+        },
+        {
+          "label": "PlayStation",
+          "set": {
+            "controller_profile": "playstation"
+          }
+        },
+        {
+          "label": "Switch",
+          "set": {
+            "controller_profile": "switch"
+          }
+        },
+        {
+          "label": "Generic",
+          "set": {
+            "controller_profile": "generic"
+          }
+        }
+      ],
+      "defaults": {
+        "controller_profile": "auto"
+      }
     },
     {
       "id": "window",

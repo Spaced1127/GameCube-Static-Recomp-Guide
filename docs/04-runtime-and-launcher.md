@@ -187,8 +187,24 @@ extraction") but should still validate it.
 
 ### Controller
 
-- Detect the first SDL gamepad and generate `Config/GCPadNew.ini` when no
-  profile exists, so a fresh RecompLauncher install is controller-ready.
+RecompLauncher starts the runner directly and never opens the custom launcher,
+so controller selection cannot live only in that UI. The **runner** must own
+detection and layout.
+
+- Enumerate SDL gamepads at startup, read `SDL_GetGamepadTypeForID` (fall back
+  to the product name), and write `Config/GCPadNew.ini` for the connected pads
+  (up to four ports).
+- Layouts: Xbox, PlayStation and generic use physical positions
+  (`Button A/B/X/Y`). Switch uses printed labels, which swaps A/B and X/Y:
+  `Buttons/A = Button B`, `B = Button A`, `X = Button Y`, `Y = Button X`.
+- `controller_profile=auto` regenerates the profile each launch so a stale
+  device or positional layout cannot survive a controller change. `manual`
+  preserves a selection made in the custom launcher;
+  `xbox`/`playstation`/`switch`/`generic` force a layout.
+- Expose the same value as a RecompLauncher setting (`controller_profile` in
+  the `config` block); RecompLauncher has no device picker of its own.
+- Initialize only `SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK` for enumeration, not
+  SDL video; video init before the platform window can change window geometry.
 - Keep `SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS` off by default; the launcher's
   overlay also uses the pad.
 - Map the standard GameCube buttons and document the mapping in `PLAYERS.md`.
@@ -333,8 +349,10 @@ Rocket Power and SpongeBob ports converged on the same model:
 3. After boot, apply borderless fullscreen to the same HWND: clear the
    overlapped style and `WS_EX_CLIENTEDGE`, remove the menu, and
    `SetWindowPos` to the monitor. The Rocket Power launcher does this from
-   outside the runner; SpongeBob does it from the platform's first main-loop
-   iteration after the video backend is ready.
+   outside the runner. SpongeBob applies it about one second after the main
+   loop starts, once the window manager has placed the render window; applying
+   it immediately can leave the window at its default windowed offset even
+   though the style is fullscreen.
 4. Keep a `m_fullscreen` flag for F11/Alt+Enter and UI state, but **do not call
    `ToggleFullscreen()` in `~PlatformWin32()`**. Destroy the borderless window
    directly. A borderless fullscreen window has no display mode to restore.
@@ -347,6 +365,13 @@ Why this matters:
 - Applying fullscreen before `VideoBackend::Initialize()` can create the swap
   chain against a window whose surface/mode changes during boot. The first
   `WM_SIZE`/recreate then races the first present.
+- Applying it on the first main-loop iteration can be too early: Windows has
+  not finished placing the window, and a later placement overwrites the
+  monitor-origin position. Wait around one second (or for the first presented
+  frame), then apply the style and position.
+- Do not initialize SDL's video subsystem just to enumerate gamepads before the
+  platform window exists; it can perturb window placement. Use
+  `SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK` for controller detection.
 - Toggling fullscreen in the destructor sends `WM_SIZE` after `Core::Shutdown`.
   The presenter can still be in its last frame, and the swap chain's images may
   already be cleared.

@@ -46,6 +46,14 @@
 - [ ] No hidden `#32770` "Warning" dialog or modal panic.
 - [ ] Swap-chain image validation and failed-recreation logging present.
 
+## Controller
+
+- [ ] Auto layout detects Xbox, PlayStation, Switch and generic pads.
+- [ ] Switch profile uses printed A/B/X/Y labels (A/B and X/Y swapped).
+- [ ] Changing controllers regenerates the device in `auto`; `manual` preserves.
+- [ ] RecompLauncher Controller layout setting writes `controller_profile`.
+- [ ] A fresh RecompLauncher install reaches input without opening the custom launcher.
+
 ## Publish
 
 - [ ] Release notes/changelog/README match.

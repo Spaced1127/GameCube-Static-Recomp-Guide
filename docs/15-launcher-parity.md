@@ -62,8 +62,11 @@ The theme is data and art, not logic:
 - manifest `label`, `settings.help` and `exit_codes`;
 - `PLAYERS.md`, README and release notes.
 
-Controller defaults and save/card names are title data, but they are still
-configuration, not a launcher fork.
+Save/card names and default controller choices are title data, but they are
+still configuration, not a launcher fork. Controller *detection and layout* is
+a shell feature: the runner must detect Xbox/PlayStation/Switch/generic pads
+itself because RecompLauncher never opens the custom launcher's controller
+page.
 
 ## Rules
 

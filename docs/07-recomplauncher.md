@@ -207,6 +207,30 @@ per-launch `--core` argument is more flexible.
 }
 ```
 
+Controller layout is the other setting RecompLauncher must own, because it
+never opens the custom launcher's controller page:
+
+```json
+{
+  "id": "controller",
+  "label": "Controller layout",
+  "help": "Auto detects Xbox, PlayStation, Switch and generic pads. Switch uses the printed A/B/X/Y labels.",
+  "choices": [
+    { "label": "Auto-detect", "set": { "controller_profile": "auto" } },
+    { "label": "Xbox", "set": { "controller_profile": "xbox" } },
+    { "label": "PlayStation", "set": { "controller_profile": "playstation" } },
+    { "label": "Switch", "set": { "controller_profile": "switch" } },
+    { "label": "Generic", "set": { "controller_profile": "generic" } }
+  ],
+  "defaults": { "controller_profile": "auto" }
+}
+```
+
+Write `controller_profile=auto` in `config.new` as well. The runner detects the
+connected SDL pad and regenerates `GCPadNew.ini`; a setting here is the manual
+override for pads that identify incorrectly (common with third-party Switch
+adapters).
+
 - File settings: each choice's `set` writes keys into the `in` config (default
   `main`). The first choice whose keys all match the file is shown. Missing
   keys are read from `defaults`.
@@ -283,7 +307,7 @@ reproduce.
 4. Change a setting; inspect `config.ini`; press Play; confirm the next
    `[video]` log.
 5. Verify Play starts the runner directly (not the custom launcher), fullscreen,
-   controller, saves/logs.
+   the selected controller layout, saves/logs.
 6. Update from the previous release and confirm `Game/` survived.
 7. Download the release asset back and confirm hash/contents/no game data.
 

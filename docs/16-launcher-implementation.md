@@ -378,6 +378,67 @@ Keep these identical across titles; they are shell features, not theme.
 
 ---
 
+## 6b. Controllers baked into the runner (no launcher picker needed)
+
+RecompLauncher does **not** expose the custom launcher's controller page, so
+controller support must live in the runner itself, not depend on the launcher.
+The shell does this in `EnsureDefaultControllerConfig` (`moderngekko_run.cpp`),
+called on every non-netplay launch, and `GenerateControllerConfig`
+(`frontend_config.cpp`) writes the profile:
+
+- **Detect every boot.** Enumerate connected SDL gamepads
+  (`SDL_GetJoysticks` + `SDL_IsGamepad` + `SDL_GetGamepadNameForID`), building
+  device strings `SDL/<index>/<name>` exactly like the launcher. The index is
+  per name, so two identical pads become `SDL/0/...` and `SDL/1/...`.
+- **Pick the layout from the pad type.** `SDL_GetGamepadTypeForID` selects
+  Xbox, PlayStation or Switch. `STANDARD`/`UNKNOWN` fall back to the product
+  name (`switch`, `joy-con`, `nintendo`; `playstation`, `dualsense`,
+  `dualshock`; `xbox`, `xinput`) and then generic.
+- **Switch uses printed labels.** Xbox, PlayStation and generic pads use the
+  physical positions: `Buttons/A = Button A`, `B = Button B`, `X = Button X`,
+  `Y = Button Y`. Switch swaps A/B and X/Y so the printed labels match:
+  `A = Button B`, `B = Button A`, `X = Button Y`, `Y = Button X`. One
+  positional profile for every family leaves a Switch pad's A and B backwards
+  in the game.
+- **`controller_profile` decides when to regenerate.** `auto` (the default)
+  regenerates the device and layout on every launch, so swapping
+  Xbox -> PS -> Switch cannot leave a stale `GCPadNew.ini`. `manual` preserves
+  a profile chosen in the custom launcher. `xbox`, `playstation`, `switch` and
+  `generic` force a layout while still following the connected device.
+- **Up to four ports.** Map connected pads to GCPad1..4 for local multiplayer.
+
+The runtime loads this file via `UICommon::SetUserDirectory(<user>)` +
+`UICommon::InitControllers`, which read `<user>/Config/GCPadNew.ini` — the same
+path `frontend::ControllerConfigPath` writes. Keep those aligned.
+
+RecompLauncher has no device picker, so expose `controller_profile` as a
+setting (Auto-detect / Xbox / PlayStation / Switch / Generic) and write
+`controller_profile=auto` in `config.new`. The runner owns the detection; the
+setting is only an override for pads that identify incorrectly.
+
+Gotchas:
+- Do not generate only when no profile exists. In `auto`, rewrite the device
+  and layout on every launch; an early return on `ControllerConfigExists`
+  leaves the old pad and the old A/B positions behind after a swap. `manual`
+  is the one mode that intentionally keeps the file.
+- Enumerate with `SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)`, not
+  `SDL_INIT_VIDEO | SDL_INIT_GAMEPAD`. SDL video init before the platform
+  window exists perturbs window placement, so a delayed borderless fullscreen
+  can keep the default windowed offset instead of the monitor origin.
+- Dolphin rewrites `GCPadNew.ini` on shutdown (save-on-exit), so a changed file
+  timestamp does not mean your code regenerated it — check the log line and the
+  content.
+
+Verify with a real pad: a fresh user dir with `controller_profile=auto` logs
+`controller: 1 SDL joystick(s) detected` and
+`controller configuration: 1 GameCube controller mapped (xbox layout)`. Set
+`controller_profile=switch` and confirm `Buttons/A = Button B`,
+`B = Button A`, `X = Button Y`, `Y = Button X`. Point `auto` at a stale
+profile and confirm it is replaced; set `manual` and confirm the existing
+profile is kept.
+
+---
+
 ## 7. Build and verify recipe
 
 ```powershell
@@ -420,6 +481,9 @@ resize-safe backdrop.
 - [ ] Forced recompile (4.4); killed running exe before link (4.5).
 - [ ] Patch is UTF-8 and `git apply --reverse --check` passes (4.6).
 - [ ] Both cores verified; `[video]`/`[audio]` lines prove settings (4.9).
+- [ ] Controllers baked into the runner (6b): auto-detect and regenerate each
+      boot, Switch printed labels, verified with a real pad (fresh / swap /
+      manual), works via RecompLauncher.
 - [ ] Theme audit: no other title's name, icon, disc ID or strings anywhere.
 - [ ] `LICENSES/` shipped; art source/license documented; game-data scan clean.
 

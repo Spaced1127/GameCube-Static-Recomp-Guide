@@ -94,6 +94,9 @@ legally dumped disc.
     toggle it in the platform destructor, and validate the swap-chain image
     before every present. See
     [docs/04](docs/04-runtime-and-launcher.md#fullscreen-and-shutdown-windows).
+- **Controller support belongs to the runner.** RecompLauncher starts the
+    runner directly; detect Xbox/PlayStation/Switch/generic pads and write the
+    layout in the runner, not only in the custom launcher.
 - **Same tag, new asset is not an update.** If you replace a GitHub release
     without bumping the tag, existing RecompLauncher installs will not see it.
     Use a new version for real updates.

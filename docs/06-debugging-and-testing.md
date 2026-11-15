@@ -238,6 +238,10 @@ Minimum before shipping:
 - [ ] fullscreen double-close
 - [ ] no hidden `#32770` "Warning" dialog or modal panic
 - [ ] controller (real pad)
+- [ ] controller auto layout: Xbox/PlayStation/generic positional, Switch labels
+- [ ] Switch profile swaps A/B and X/Y in `GCPadNew.ini`
+- [ ] changing controllers: `auto` regenerates the device; `manual` preserves
+- [ ] RecompLauncher Controller layout setting writes `controller_profile`
 - [ ] one graphics settings change, confirm `[video]` log
 - [ ] RecompLauncher setup from ISO, verified badge, settings, Play
 - [ ] update from previous release (if applicable)

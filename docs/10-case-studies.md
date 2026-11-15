@@ -50,14 +50,26 @@ Entry point:  0x80003140
    fullscreen; it destroys the borderless window directly and validates the
    current image before every present. v0.1.5 adds the final shutdown guards:
    the presenter skips its frame-pacing sleep while the core is stopping, and
-   an 8-second watchdog covers any remaining Vulkan/shader wait. See
-   [runtime/fullscreen](04-runtime-and-launcher.md#fullscreen-and-shutdown-windows)
+   an 8-second watchdog covers any remaining Vulkan/shader wait. The fullscreen
+   style change waits about one second after the main loop starts so Windows
+   cannot overwrite the monitor-origin position with the default window offset.
+   See [runtime/fullscreen](04-runtime-and-launcher.md#fullscreen-and-shutdown-windows)
    and [troubleshooting](09-troubleshooting.md#window--shutdown).
+7. **Controller selection existed only in the custom launcher.**
+   RecompLauncher starts the runner directly and never opens that UI. v0.1.5
+   makes the runner detect the SDL pad type, write the matching
+   `GCPadNew.ini`, and use printed Switch A/B/X/Y labels. `auto` regenerates a
+   stale profile on every launch; `manual` preserves a custom-launcher choice;
+   `xbox`/`playstation`/`switch`/`generic` force a layout. RecompLauncher now
+   exposes **Controller layout** (14 settings). See
+   [runtime/controller](04-runtime-and-launcher.md#controller) and
+   [RecompLauncher settings](07-recomplauncher.md#settings).
 
 ### Shipping
 
-- `recomplauncher.json` at the top of the zip, 13 settings, CPU core choice,
-  Redump dump, headless `--extract` prepare with `progress` lines.
+- `recomplauncher.json` at the top of the zip, 14 settings, CPU core and
+  Controller layout choices, Redump dump, headless `--extract` prepare with
+  `progress` lines.
 - Frame rate clamped to 1.0 (59.94 Hz); Unlocked/150/200 removed.
 - Icons embedded in both executables.
 - v0.1.3 asset:
@@ -68,9 +80,10 @@ Entry point:  0x80003140
   version for a normal update.
 - v0.1.4 fixed the fullscreen ALT+F4 crash with the delayed/external
   fullscreen model and swap-chain validation. v0.1.5 completes the fix with
-  the presenter sleep guard and watchdog:
-  `SpongeBobRecomp-v0.1.5-Windows-x64.zip`, 28,798,822 bytes, SHA-256
-  `635D14337B3676388470CA3016DEF7C03EC561027D8716454FDC98EFD4F3A973`.
+  the presenter sleep guard, watchdog and one-second placement delay, and adds
+  the runner-owned controller layouts:
+  `SpongeBobRecomp-v0.1.5-Windows-x64.zip`, 28,803,228 bytes, SHA-256
+  `1A0CEBD909F4D522D1FC376F445EBBD3CC1A63634959432074B28AF759E81F31`.
 
 ### Lessons
 
@@ -80,6 +93,8 @@ Entry point:  0x80003140
 - JIT is a legitimate playable path; do not equate "static recomp" with
   "must ship the static module for gameplay".
 - Keep the static module as a selectable artifact and document the difference.
+- If RecompLauncher can start the game without the custom launcher, controller
+  detection and layout must live in the runner too.
 
 ## Rocket Power: Beach Bandits (GBQE78)
 
